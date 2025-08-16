@@ -1,5 +1,7 @@
+// Package nerdfonts provides icon constants for GPU and CPU metrics display
 package nerdfonts
 
+// Icon represents a nerd font icon string
 type Icon string
 
 const (
@@ -23,6 +25,7 @@ const (
 	CPUBoost    Icon = "󱓞" // Boost/turbo mode (rocket)
 	CPUMinMax   Icon = "↕" // Range indicator (up-down arrow)
 	CPUIOwait   Icon = "⏸" // Time/wait (pause symbol)
+	CPUPower    Icon = "󰾲" // Power consumption (lightning bolt)
 )
 
 func (i Icon) String() string {

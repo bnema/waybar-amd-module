@@ -1,3 +1,4 @@
+// Package cmd provides CLI commands for monitoring AMD hardware metrics
 package cmd
 
 import (
@@ -23,6 +24,7 @@ func init() {
 	rootCmd.AddCommand(cpuCmd)
 }
 
+// Execute runs the root command
 func Execute() error {
 	return rootCmd.Execute()
 }
