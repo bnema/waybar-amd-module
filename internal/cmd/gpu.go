@@ -3,32 +3,53 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/bnema/waybar-amd-module/internal/gpu"
 	"github.com/bnema/waybar-amd-module/internal/nerdfonts"
 )
 
-func formatWithSymbols(power float64, temp int, freq float64, util int) (string, string) {
-	var text, tooltip string
+func formatWithSymbols(metrics *gpu.Metrics) (string, string) {
+	var text string
 	
 	if nerdFontFlag {
 		text = fmt.Sprintf("%s %.1fW %s %d°C %s %.1fGHz %s %d%%", 
-			nerdfonts.GPUPower, power, 
-			nerdfonts.GPUTemp, temp, 
-			nerdfonts.GPUFreq, freq, 
-			nerdfonts.GPUUtil, util)
-		tooltip = fmt.Sprintf("%s Power: %.1fW\n%s Temp: %d°C\n%s Freq: %.1fGHz\n%s Util: %d%%", 
-			nerdfonts.GPUPower, power, 
-			nerdfonts.GPUTemp, temp, 
-			nerdfonts.GPUFreq, freq, 
-			nerdfonts.GPUUtil, util)
+			nerdfonts.GPUPower, metrics.Power, 
+			nerdfonts.GPUTemp, metrics.Temperature, 
+			nerdfonts.GPUFreq, metrics.Frequency, 
+			nerdfonts.GPUUtil, metrics.Utilization)
+		
+		tooltipLines := []string{
+			fmt.Sprintf("%s Power: %.1fW", nerdfonts.GPUPower, metrics.Power),
+			fmt.Sprintf("%s Temp: %d°C", nerdfonts.GPUTemp, metrics.Temperature),
+			fmt.Sprintf("%s Freq: %.1fGHz", nerdfonts.GPUFreq, metrics.Frequency),
+			fmt.Sprintf("%s Util: %d%%", nerdfonts.GPUUtil, metrics.Utilization),
+			fmt.Sprintf("%s Memory: %.1f%%", nerdfonts.GPUMemory, metrics.MemoryUsage),
+			fmt.Sprintf("%s Fan: %d RPM", nerdfonts.GPUFan, metrics.FanSpeed),
+			fmt.Sprintf("%s Voltage: %.2fV", nerdfonts.GPUVoltage, metrics.Voltage),
+			fmt.Sprintf("%s Junction: %d°C", nerdfonts.GPUTemp, metrics.JunctionTemp),
+			fmt.Sprintf("%s Memory Temp: %d°C", nerdfonts.GPUTemp, metrics.MemoryTemp),
+			fmt.Sprintf("%s Power Cap: %.1fW", nerdfonts.GPUPower, metrics.PowerCap),
+		}
+		return text, strings.Join(tooltipLines, "\n")
 	} else {
-		text = fmt.Sprintf("%.1fW %d°C %.1fGHz %d%%", power, temp, freq, util)
-		tooltip = fmt.Sprintf("Power: %.1fW\nTemp: %d°C\nFreq: %.1fGHz\nUtil: %d%%", power, temp, freq, util)
+		text = fmt.Sprintf("%.1fW %d°C %.1fGHz %d%%", metrics.Power, metrics.Temperature, metrics.Frequency, metrics.Utilization)
+		
+		tooltipLines := []string{
+			fmt.Sprintf("Power: %.1fW", metrics.Power),
+			fmt.Sprintf("Temp: %d°C", metrics.Temperature),
+			fmt.Sprintf("Freq: %.1fGHz", metrics.Frequency),
+			fmt.Sprintf("Util: %d%%", metrics.Utilization),
+			fmt.Sprintf("Memory: %.1f%%", metrics.MemoryUsage),
+			fmt.Sprintf("Fan: %d RPM", metrics.FanSpeed),
+			fmt.Sprintf("Voltage: %.2fV", metrics.Voltage),
+			fmt.Sprintf("Junction: %d°C", metrics.JunctionTemp),
+			fmt.Sprintf("Memory Temp: %d°C", metrics.MemoryTemp),
+			fmt.Sprintf("Power Cap: %.1fW", metrics.PowerCap),
+		}
+		return text, strings.Join(tooltipLines, "\n")
 	}
-	
-	return text, tooltip
 }
 
 func formatPower(power float64) string {
@@ -80,7 +101,7 @@ var gpuAllCmd = &cobra.Command{
 			return
 		}
 
-		text, tooltip := formatWithSymbols(metrics.Power, metrics.Temperature, metrics.Frequency, metrics.Utilization)
+		text, tooltip := formatWithSymbols(metrics)
 		
 		switch formatFlag {
 		case "json":
@@ -122,7 +143,7 @@ var gpuPowerCmd = &cobra.Command{
 			}
 			
 			text := formatPower(power)
-			_, tooltip := formatWithSymbols(metrics.Power, metrics.Temperature, metrics.Frequency, metrics.Utilization)
+			_, tooltip := formatWithSymbols(metrics)
 			
 			output := gpu.WaybarOutput{
 				Text:    text,
@@ -162,7 +183,7 @@ var gpuTempCmd = &cobra.Command{
 			}
 			
 			text := formatTemp(temp)
-			_, tooltip := formatWithSymbols(metrics.Power, metrics.Temperature, metrics.Frequency, metrics.Utilization)
+			_, tooltip := formatWithSymbols(metrics)
 			
 			output := gpu.WaybarOutput{
 				Text:    text,
@@ -202,7 +223,7 @@ var gpuFreqCmd = &cobra.Command{
 			}
 			
 			text := formatFreq(freq)
-			_, tooltip := formatWithSymbols(metrics.Power, metrics.Temperature, metrics.Frequency, metrics.Utilization)
+			_, tooltip := formatWithSymbols(metrics)
 			
 			output := gpu.WaybarOutput{
 				Text:    text,
@@ -242,7 +263,7 @@ var gpuUtilCmd = &cobra.Command{
 			}
 			
 			text := formatUtil(util)
-			_, tooltip := formatWithSymbols(metrics.Power, metrics.Temperature, metrics.Frequency, metrics.Utilization)
+			_, tooltip := formatWithSymbols(metrics)
 			
 			output := gpu.WaybarOutput{
 				Text:    text,

@@ -3,32 +3,53 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/bnema/waybar-amd-module/internal/cpu"
 	"github.com/bnema/waybar-amd-module/internal/nerdfonts"
 )
 
-func formatCPUWithSymbols(usage float64, temp int, freq float64, cores int) (string, string) {
-	var text, tooltip string
+func formatCPUWithSymbols(metrics *cpu.Metrics) (string, string) {
+	var text string
 	
 	if nerdFontFlag {
 		text = fmt.Sprintf("%s %.1f%% %s %d°C %s %.1fGHz %s %d", 
-			nerdfonts.CPUUsage, usage, 
-			nerdfonts.CPUTemp, temp, 
-			nerdfonts.CPUFreq, freq, 
-			nerdfonts.CPUCores, cores)
-		tooltip = fmt.Sprintf("%s Usage: %.1f%%\n%s Temp: %d°C\n%s Freq: %.1fGHz\n%s Cores: %d", 
-			nerdfonts.CPUUsage, usage, 
-			nerdfonts.CPUTemp, temp, 
-			nerdfonts.CPUFreq, freq, 
-			nerdfonts.CPUCores, cores)
+			nerdfonts.CPUUsage, metrics.Usage, 
+			nerdfonts.CPUTemp, metrics.Temperature, 
+			nerdfonts.CPUFreq, metrics.Frequency, 
+			nerdfonts.CPUCores, metrics.Cores)
+		
+		tooltipLines := []string{
+			fmt.Sprintf("%s Usage: %.1f%%", nerdfonts.CPUUsage, metrics.Usage),
+			fmt.Sprintf("%s Temp: %d°C", nerdfonts.CPUTemp, metrics.Temperature),
+			fmt.Sprintf("%s Freq: %.1fGHz", nerdfonts.CPUFreq, metrics.Frequency),
+			fmt.Sprintf("%s Cores: %d", nerdfonts.CPUCores, metrics.Cores),
+			fmt.Sprintf("%s Memory: %.1f%%", nerdfonts.CPUMemory, metrics.MemoryUsage),
+			fmt.Sprintf("%s Load: %.2f", nerdfonts.CPULoad, metrics.LoadAvg),
+			fmt.Sprintf("%s Governor: %s", nerdfonts.CPUGovernor, metrics.Governor),
+			fmt.Sprintf("%s Boost: %t", nerdfonts.CPUBoost, metrics.BoostEnabled),
+			fmt.Sprintf("%s Min/Max Freq: %.1f-%.1fGHz", nerdfonts.CPUMinMax, metrics.MinFreq, metrics.MaxFreq),
+			fmt.Sprintf("%s IO Wait: %.1f%%", nerdfonts.CPUIOwait, metrics.IOWait),
+		}
+		return text, strings.Join(tooltipLines, "\n")
 	} else {
-		text = fmt.Sprintf("%.1f%% %d°C %.1fGHz %d cores", usage, temp, freq, cores)
-		tooltip = fmt.Sprintf("Usage: %.1f%%\nTemp: %d°C\nFreq: %.1fGHz\nCores: %d", usage, temp, freq, cores)
+		text = fmt.Sprintf("%.1f%% %d°C %.1fGHz %d cores", metrics.Usage, metrics.Temperature, metrics.Frequency, metrics.Cores)
+		
+		tooltipLines := []string{
+			fmt.Sprintf("Usage: %.1f%%", metrics.Usage),
+			fmt.Sprintf("Temp: %d°C", metrics.Temperature),
+			fmt.Sprintf("Freq: %.1fGHz", metrics.Frequency),
+			fmt.Sprintf("Cores: %d", metrics.Cores),
+			fmt.Sprintf("Memory: %.1f%%", metrics.MemoryUsage),
+			fmt.Sprintf("Load: %.2f", metrics.LoadAvg),
+			fmt.Sprintf("Governor: %s", metrics.Governor),
+			fmt.Sprintf("Boost: %t", metrics.BoostEnabled),
+			fmt.Sprintf("Min/Max Freq: %.1f-%.1fGHz", metrics.MinFreq, metrics.MaxFreq),
+			fmt.Sprintf("IO Wait: %.1f%%", metrics.IOWait),
+		}
+		return text, strings.Join(tooltipLines, "\n")
 	}
-	
-	return text, tooltip
 }
 
 func formatCPUUsage(usage float64) string {
@@ -80,7 +101,7 @@ var cpuAllCmd = &cobra.Command{
 			return
 		}
 
-		text, tooltip := formatCPUWithSymbols(metrics.Usage, metrics.Temperature, metrics.Frequency, metrics.Cores)
+		text, tooltip := formatCPUWithSymbols(metrics)
 		
 		switch formatFlag {
 		case "json":
@@ -122,7 +143,7 @@ var cpuUsageCmd = &cobra.Command{
 			}
 			
 			text := formatCPUUsage(usage)
-			_, tooltip := formatCPUWithSymbols(metrics.Usage, metrics.Temperature, metrics.Frequency, metrics.Cores)
+			_, tooltip := formatCPUWithSymbols(metrics)
 			
 			output := cpu.WaybarOutput{
 				Text:    text,
@@ -162,7 +183,7 @@ var cpuTempCmd = &cobra.Command{
 			}
 			
 			text := formatCPUTemp(temp)
-			_, tooltip := formatCPUWithSymbols(metrics.Usage, metrics.Temperature, metrics.Frequency, metrics.Cores)
+			_, tooltip := formatCPUWithSymbols(metrics)
 			
 			output := cpu.WaybarOutput{
 				Text:    text,
@@ -202,7 +223,7 @@ var cpuFreqCmd = &cobra.Command{
 			}
 			
 			text := formatCPUFreq(freq)
-			_, tooltip := formatCPUWithSymbols(metrics.Usage, metrics.Temperature, metrics.Frequency, metrics.Cores)
+			_, tooltip := formatCPUWithSymbols(metrics)
 			
 			output := cpu.WaybarOutput{
 				Text:    text,
@@ -242,7 +263,7 @@ var cpuCoresCmd = &cobra.Command{
 			}
 			
 			text := formatCPUCores(cores)
-			_, tooltip := formatCPUWithSymbols(metrics.Usage, metrics.Temperature, metrics.Frequency, metrics.Cores)
+			_, tooltip := formatCPUWithSymbols(metrics)
 			
 			output := cpu.WaybarOutput{
 				Text:    text,
