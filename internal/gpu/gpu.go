@@ -1,3 +1,4 @@
+// Package gpu provides functions to monitor AMD GPU metrics including power, temperature, frequency and utilization
 package gpu
 
 import (
@@ -8,6 +9,7 @@ import (
 	"strings"
 )
 
+// Metrics contains comprehensive GPU monitoring data
 type Metrics struct {
 	Power       float64 `json:"power"`
 	Temperature int     `json:"temperature"`
@@ -21,6 +23,7 @@ type Metrics struct {
 	PowerCap     float64 `json:"power_cap"`
 }
 
+// WaybarOutput represents the JSON structure expected by Waybar
 type WaybarOutput struct {
 	Text    string `json:"text"`
 	Tooltip string `json:"tooltip"`
@@ -69,8 +72,12 @@ func readMetricFile(filename string) (string, error) {
 		return "", errors.New("GPU path not available")
 	}
 	
-	path := filepath.Join(gpuPath, filename)
-	data, err := os.ReadFile(path)
+	path := filepath.Clean(filepath.Join(gpuPath, filename))
+	// Validate that the path is within expected system directory and doesn't contain path traversal
+	if !strings.HasPrefix(path, "/sys/") || strings.Contains(path, "..") {
+		return "", errors.New("invalid system path")
+	}
+	data, err := os.ReadFile(path) // #nosec G304 - path is validated above
 	if err != nil {
 		return "", err
 	}
@@ -84,14 +91,19 @@ func readDeviceFile(filename string) (string, error) {
 	
 	devicePath := filepath.Dir(filepath.Dir(gpuPath))
 	
-	path := filepath.Join(devicePath, filename)
-	data, err := os.ReadFile(path)
+	path := filepath.Clean(filepath.Join(devicePath, filename))
+	// Validate that the path is within expected system directory and doesn't contain path traversal
+	if !strings.HasPrefix(path, "/sys/") || strings.Contains(path, "..") {
+		return "", errors.New("invalid system path")
+	}
+	data, err := os.ReadFile(path) // #nosec G304 - path is validated above
 	if err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(string(data)), nil
 }
 
+// GetPower returns GPU power consumption in watts
 func GetPower() (float64, error) {
 	powerStr, err := readMetricFile("power1_input")
 	if err != nil {
@@ -106,6 +118,7 @@ func GetPower() (float64, error) {
 	return float64(powerMicrowatts) / 1000000.0, nil
 }
 
+// GetTemperature returns GPU temperature in Celsius
 func GetTemperature() (int, error) {
 	tempStr, err := readMetricFile("temp1_input")
 	if err != nil {
@@ -120,6 +133,7 @@ func GetTemperature() (int, error) {
 	return int(tempMillidegrees / 1000), nil
 }
 
+// GetFrequency returns GPU frequency in GHz
 func GetFrequency() (float64, error) {
 	freqStr, err := readMetricFile("freq1_input")
 	if err != nil {
@@ -134,6 +148,7 @@ func GetFrequency() (float64, error) {
 	return float64(freqHz) / 1000000000.0, nil
 }
 
+// GetUtilization returns GPU utilization percentage
 func GetUtilization() (int, error) {
 	utilStr, err := readDeviceFile("gpu_busy_percent")
 	if err != nil {
@@ -148,6 +163,7 @@ func GetUtilization() (int, error) {
 	return int(utilization), nil
 }
 
+// GetMemoryUsage returns VRAM usage percentage
 func GetMemoryUsage() (float64, error) {
 	usedStr, err := readDeviceFile("mem_info_vram_used")
 	if err != nil {
@@ -176,6 +192,7 @@ func GetMemoryUsage() (float64, error) {
 	return float64(used) / float64(total) * 100, nil
 }
 
+// GetFanSpeed returns GPU fan speed in RPM
 func GetFanSpeed() (int, error) {
 	fanStr, err := readMetricFile("fan1_input")
 	if err != nil {
@@ -190,6 +207,7 @@ func GetFanSpeed() (int, error) {
 	return int(fanRPM), nil
 }
 
+// GetVoltage returns GPU voltage in volts
 func GetVoltage() (float64, error) {
 	voltageStr, err := readMetricFile("in0_input")
 	if err != nil {
@@ -204,10 +222,13 @@ func GetVoltage() (float64, error) {
 	return float64(voltageMillivolts) / 1000.0, nil
 }
 
+// GetJunctionTemp returns GPU junction temperature in Celsius
+// Falls back to main temperature if temp2_input is not available
 func GetJunctionTemp() (int, error) {
 	tempStr, err := readMetricFile("temp2_input")
 	if err != nil {
-		return 0, err
+		// Fall back to main temperature sensor if junction temp not available
+		return GetTemperature()
 	}
 	
 	tempMillidegrees, err := strconv.ParseInt(tempStr, 10, 64)
@@ -218,10 +239,13 @@ func GetJunctionTemp() (int, error) {
 	return int(tempMillidegrees / 1000), nil
 }
 
+// GetMemoryTemp returns GPU memory temperature in Celsius
+// Falls back to main temperature if temp3_input is not available
 func GetMemoryTemp() (int, error) {
 	tempStr, err := readMetricFile("temp3_input")
 	if err != nil {
-		return 0, err
+		// Fall back to main temperature sensor if memory temp not available
+		return GetTemperature()
 	}
 	
 	tempMillidegrees, err := strconv.ParseInt(tempStr, 10, 64)
@@ -232,6 +256,7 @@ func GetMemoryTemp() (int, error) {
 	return int(tempMillidegrees / 1000), nil
 }
 
+// GetPowerCap returns GPU power cap limit in watts
 func GetPowerCap() (float64, error) {
 	capStr, err := readMetricFile("power1_cap")
 	if err != nil {
@@ -246,6 +271,7 @@ func GetPowerCap() (float64, error) {
 	return float64(capMicrowatts) / 1000000.0, nil
 }
 
+// GetAllMetrics collects all GPU metrics and returns them in a single structure
 func GetAllMetrics() (*Metrics, error) {
 	power, err := GetPower()
 	if err != nil {
