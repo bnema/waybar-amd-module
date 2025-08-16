@@ -1,0 +1,149 @@
+version: "2"
+
+# Options for analysis running.
+run:
+  # Timeout for analysis, e.g. 30s, 5m.
+  timeout: 5m
+  
+  # Include test files or not.
+  tests: true
+  
+  # List of build tags, all linters use it.
+  build-tags:
+    - integration
+
+# Formatters configuration.
+formatters:
+  gofmt:
+    enable: true
+  goimports:
+    enable: true
+
+# Output configuration options.
+output:
+  # Sorts results by: filepath, line and column.
+  sort-results: true
+  
+  # Print lines of code with issue.
+  print-issued-lines: true
+  
+  # Print linter name in the end of issue text.
+  print-linter-name: true
+  
+  # Make issues output unique by line.
+  uniq-by-line: true
+
+# All available settings for specific linters.
+linters-settings:
+  # Settings for gocyclo linter.
+  gocyclo:
+    # Minimal code complexity to report.
+    min-complexity: 15
+  
+  # Settings for goconst linter.
+  goconst:
+    # Minimal length of string constant.
+    min-len: 3
+    # Minimum occurrences of constant string count to trigger issue.
+    min-occurrences: 3
+  
+  # Settings for gosec linter.
+  gosec:
+    # To select a subset of rules to run.
+    includes:
+      - G401
+      - G306
+      - G101
+    # To specify a set of rules to explicitly exclude.
+    excludes:
+      - G204
+  
+  # Settings for govet linter.
+  govet:
+    # Enable or disable analyzers by name.
+    enable:
+      - shadow
+    disable:
+      - fieldalignment
+
+# Linters configuration.
+linters:
+  # Disable all linters as it's not a goal of this example to enable all of them.
+  disable-all: true
+  
+  # Enable specific linters.
+  enable:
+    # Core Go checks
+    - govet        # Vet examines Go source code and reports suspicious constructs
+    - errcheck     # Check for unchecked errors
+    - staticcheck  # State-of-the-art linter for the Go programming language
+    - unused       # Check for unused constants, variables, functions and types
+    - ineffassign  # Detect ineffectual assignments
+    
+    # Code style and formatting
+    - revive       # Fast, configurable, extensible, flexible, and beautiful linter for Go
+    - gocyclo      # Computes and checks the cyclomatic complexity of functions
+    - goconst      # Find repeated strings that could be replaced by a constant
+    
+    # Security
+    - gosec        # Inspect source code for security problems
+    
+    # Performance
+    - prealloc     # Find slice declarations that could potentially be preallocated
+    
+    # Best practices
+    - unconvert    # Remove unnecessary type conversions
+    - misspell     # Find commonly misspelled English words in comments
+    - unparam      # Report unused function parameters
+    
+    # Additional useful linters
+    - bodyclose    # Check whether HTTP response body is closed successfully
+    - nilerr       # Find the code that returns nil even if it checks that the error is not nil
+    - rowserrcheck # Check whether Err of rows is checked successfully
+    - sqlclosecheck # Check that sql.Rows and sql.Stmt are closed
+
+# Issues configuration.
+issues:
+  # List of regexps of issue texts to exclude.
+  exclude:
+    # Exclude some linters from running on tests files.
+    - "Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*print(f|ln)?|os\\.(Un)?Setenv). is not checked"
+  
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+    
+    # Exclude known linters from partially hard-to-fix issues
+    - path: cmd/
+      linters:
+        - unused
+    
+    # Disable some issues in main function
+    - path: main\.go
+      linters:
+        - errcheck
+      text: "Error return value of.*is not checked"
+  
+  # Show only new issues: if there are unstaged changes or untracked files,
+  # only those changes are analyzed, else only changes in HEAD~ are analyzed.
+  new: false
+  
+  # Maximum issues count per one linter.
+  max-issues-per-linter: 0
+  
+  # Maximum count of issues with the same text.
+  max-same-issues: 0
+
+# Severity configuration.
+severity:
+  # Default severity level to assign to issues.
+  default-severity: error
+  
+  # The default value is false.
+  case-sensitive: false
