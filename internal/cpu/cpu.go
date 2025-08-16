@@ -1,3 +1,4 @@
+// Package cpu provides functions to monitor AMD CPU metrics including usage, temperature, frequency and other hardware information
 package cpu
 
 import (
@@ -10,6 +11,7 @@ import (
 	"time"
 )
 
+// Metrics contains comprehensive CPU monitoring data
 type Metrics struct {
 	Usage       float64 `json:"usage"`
 	Temperature int     `json:"temperature"`
@@ -22,8 +24,11 @@ type Metrics struct {
 	MinFreq     float64 `json:"min_freq"`
 	MaxFreq     float64 `json:"max_freq"`
 	IOWait      float64 `json:"io_wait"`
+	Power       float64 `json:"power"`
 }
 
+
+// WaybarOutput represents the JSON structure expected by Waybar
 type WaybarOutput struct {
 	Text    string `json:"text"`
 	Tooltip string `json:"tooltip"`
@@ -83,6 +88,7 @@ func (s cpuStat) active() uint64 {
 	return s.user + s.nice + s.system + s.irq + s.softirq
 }
 
+// GetUsage calculates CPU usage percentage by sampling /proc/stat twice
 func GetUsage() (float64, error) {
 	// Read initial CPU stats
 	data, err := os.ReadFile("/proc/stat")
@@ -131,6 +137,7 @@ func GetUsage() (float64, error) {
 	return usage, nil
 }
 
+// GetTemperature reads CPU temperature from k10temp sensor in Celsius
 func GetTemperature() (int, error) {
 	// Find k10temp hwmon device
 	hwmonDirs, err := filepath.Glob("/sys/class/hwmon/hwmon*")
@@ -139,15 +146,23 @@ func GetTemperature() (int, error) {
 	}
 	
 	for _, hwmonDir := range hwmonDirs {
-		nameFile := filepath.Join(hwmonDir, "name")
-		nameData, err := os.ReadFile(nameFile)
+		nameFile := filepath.Clean(filepath.Join(hwmonDir, "name"))
+		// Validate that the path is within expected system directory and doesn't contain path traversal
+		if !strings.HasPrefix(nameFile, "/sys/class/hwmon/") || strings.Contains(nameFile, "..") {
+			continue
+		}
+		nameData, err := os.ReadFile(nameFile) // #nosec G304 - path is validated above
 		if err != nil {
 			continue
 		}
 		
 		if strings.TrimSpace(string(nameData)) == "k10temp" {
-			tempFile := filepath.Join(hwmonDir, "temp1_input")
-			tempData, err := os.ReadFile(tempFile)
+			tempFile := filepath.Clean(filepath.Join(hwmonDir, "temp1_input"))
+			// Validate that the path is within expected system directory and doesn't contain path traversal
+			if !strings.HasPrefix(tempFile, "/sys/class/hwmon/") || strings.Contains(tempFile, "..") {
+				continue
+			}
+			tempData, err := os.ReadFile(tempFile) // #nosec G304 - path is validated above
 			if err != nil {
 				continue
 			}
@@ -164,6 +179,7 @@ func GetTemperature() (int, error) {
 	return 0, errors.New("k10temp not found")
 }
 
+// GetFrequency returns average CPU frequency across all cores in GHz
 func GetFrequency() (float64, error) {
 	cpuDirs, err := filepath.Glob("/sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq")
 	if err != nil {
@@ -178,7 +194,12 @@ func GetFrequency() (float64, error) {
 	var count int
 	
 	for _, freqFile := range cpuDirs {
-		data, err := os.ReadFile(freqFile)
+		cleanPath := filepath.Clean(freqFile)
+		// Validate that the path is within expected system directory and doesn't contain path traversal
+		if !strings.HasPrefix(cleanPath, "/sys/devices/system/cpu/") || strings.Contains(cleanPath, "..") {
+			continue
+		}
+		data, err := os.ReadFile(cleanPath) // #nosec G304 - path is validated above
 		if err != nil {
 			continue
 		}
@@ -201,10 +222,12 @@ func GetFrequency() (float64, error) {
 	return avgFreqGHz, nil
 }
 
+// GetCores returns the number of CPU cores available
 func GetCores() (int, error) {
 	return runtime.NumCPU(), nil
 }
 
+// GetMemoryUsage returns system memory usage percentage
 func GetMemoryUsage() (float64, error) {
 	data, err := os.ReadFile("/proc/meminfo")
 	if err != nil {
@@ -240,6 +263,7 @@ func GetMemoryUsage() (float64, error) {
 	return float64(memUsed) / float64(memTotal) * 100, nil
 }
 
+// GetLoadAverage returns the 1-minute load average
 func GetLoadAverage() (float64, error) {
 	data, err := os.ReadFile("/proc/loadavg")
 	if err != nil {
@@ -259,6 +283,7 @@ func GetLoadAverage() (float64, error) {
 	return loadAvg, nil
 }
 
+// GetGovernor returns the current CPU frequency scaling governor
 func GetGovernor() (string, error) {
 	data, err := os.ReadFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
 	if err != nil {
@@ -268,6 +293,7 @@ func GetGovernor() (string, error) {
 	return strings.TrimSpace(string(data)), nil
 }
 
+// GetBoostEnabled checks if CPU frequency boost is enabled
 func GetBoostEnabled() (bool, error) {
 	data, err := os.ReadFile("/sys/devices/system/cpu/cpu0/cpufreq/boost")
 	if err != nil {
@@ -278,6 +304,7 @@ func GetBoostEnabled() (bool, error) {
 	return boost == "1", nil
 }
 
+// GetMinMaxFreq returns the minimum and maximum CPU frequencies in GHz
 func GetMinMaxFreq() (float64, float64, error) {
 	minData, err := os.ReadFile("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq")
 	if err != nil {
@@ -302,6 +329,7 @@ func GetMinMaxFreq() (float64, float64, error) {
 	return minFreqKHz / 1000000, maxFreqKHz / 1000000, nil
 }
 
+// GetIOWait calculates the percentage of time spent waiting for I/O operations
 func GetIOWait() (float64, error) {
 	data, err := os.ReadFile("/proc/stat")
 	if err != nil {
@@ -345,6 +373,47 @@ func GetIOWait() (float64, error) {
 	return float64(iowaitDiff) / float64(totalDiff) * 100, nil
 }
 
+
+// GetPower returns overall system power consumption in watts from battery/AC adapter
+// Positive values indicate power being added to battery (charging)
+// Negative values indicate power being consumed from battery (discharging)
+func GetPower() (float64, error) {
+	// Read from battery power supply
+	if powerSupplyDirs, err := filepath.Glob("/sys/class/power_supply/*"); err == nil {
+		for _, dir := range powerSupplyDirs {
+			// Check if this is a battery
+			typePath := filepath.Join(dir, "type")
+			if typeData, err := os.ReadFile(typePath); err == nil {
+				if strings.TrimSpace(string(typeData)) == "Battery" {
+					// Check battery status
+					statusPath := filepath.Join(dir, "status")
+					if statusData, err := os.ReadFile(statusPath); err == nil {
+						status := strings.TrimSpace(string(statusData))
+						if status == "Discharging" || status == "Charging" {
+							// Try to read power_now (in microwatts)
+							powerPath := filepath.Join(dir, "power_now")
+							if powerData, err := os.ReadFile(powerPath); err == nil {
+								if powerMicrowatts, err := strconv.ParseInt(strings.TrimSpace(string(powerData)), 10, 64); err == nil {
+									powerWatts := float64(powerMicrowatts) / 1000000.0
+									// Return positive for charging, negative for discharging
+									if status == "Charging" {
+										return powerWatts, nil
+									} else {
+										return -powerWatts, nil
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	return 0, nil // No power information available or battery is full/unknown state
+}
+
+// GetAllMetrics collects all CPU metrics and returns them in a single structure
 func GetAllMetrics() (*Metrics, error) {
 	usage, err := GetUsage()
 	if err != nil {
@@ -396,6 +465,11 @@ func GetAllMetrics() (*Metrics, error) {
 		ioWait = 0 // Don't fail on IO wait error, just set to 0
 	}
 	
+	power, err := GetPower()
+	if err != nil {
+		power = 0 // Don't fail on power error, just set to 0
+	}
+	
 	return &Metrics{
 		Usage:        usage,
 		Temperature:  temp,
@@ -408,5 +482,6 @@ func GetAllMetrics() (*Metrics, error) {
 		MinFreq:      minFreq,
 		MaxFreq:      maxFreq,
 		IOWait:       ioWait,
+		Power:        power,
 	}, nil
 }
