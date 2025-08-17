@@ -1,0 +1,15 @@
+# CODEOWNERS file for waybar-amd-module
+# This file defines who should review changes to different parts of the codebase
+
+# Global ownership - all files require review from the project owner
+* @bnema
+
+# Go module files require special attention for dependency management
+go.mod @bnema
+go.sum @bnema
+
+# GitHub workflows and configuration
+/.github/ @bnema
+
+# Documentation changes
+*.md @bnema
