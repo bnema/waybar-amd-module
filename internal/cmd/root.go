@@ -3,11 +3,14 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/bnema/waybar-amd-module/internal/discovery"
 )
 
 var (
 	formatFlag    string
 	nerdFontFlag  bool
+	
+	pathCache *discovery.PathCache
 )
 
 var rootCmd = &cobra.Command{
@@ -22,6 +25,12 @@ func init() {
 	
 	rootCmd.AddCommand(gpuCmd)
 	rootCmd.AddCommand(cpuCmd)
+	rootCmd.AddCommand(scanCmd)
+}
+
+// SetPathCache sets the path cache for use by commands
+func SetPathCache(cache *discovery.PathCache) {
+	pathCache = cache
 }
 
 // Execute runs the root command

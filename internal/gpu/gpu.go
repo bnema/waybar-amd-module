@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/bnema/waybar-amd-module/internal/discovery"
 )
 
 // Metrics contains comprehensive GPU monitoring data
@@ -30,49 +32,24 @@ type WaybarOutput struct {
 	Class   string `json:"class"`
 }
 
-var gpuPath string
+var gpuPaths *discovery.GPUPaths
 
-func init() {
-	path, err := discoverAMDGPU()
-	if err != nil {
-		gpuPath = ""
-	} else {
-		gpuPath = path
+// Initialize sets up the GPU package with discovered paths
+func Initialize(cache *discovery.PathCache) error {
+	if cache.GPU == nil {
+		return errors.New("no GPU paths found in cache")
 	}
+	gpuPaths = cache.GPU
+	return nil
 }
 
-func discoverAMDGPU() (string, error) {
-	cardDirs, err := filepath.Glob("/sys/class/drm/card*")
-	if err != nil {
-		return "", err
-	}
-
-	for _, cardDir := range cardDirs {
-		driverPath := filepath.Join(cardDir, "device", "driver")
-		if target, err := os.Readlink(driverPath); err == nil {
-			if strings.Contains(target, "amdgpu") {
-				hwmonDirs, err := filepath.Glob(filepath.Join(cardDir, "device", "hwmon", "hwmon*"))
-				if err == nil && len(hwmonDirs) > 0 {
-					return hwmonDirs[0], nil
-				}
-			}
-		}
-	}
-
-	pciDirs, err := filepath.Glob("/sys/bus/pci/drivers/amdgpu/*/hwmon/hwmon*")
-	if err == nil && len(pciDirs) > 0 {
-		return pciDirs[0], nil
-	}
-
-	return "", errors.New("no AMD GPU found")
-}
 
 func readMetricFile(filename string) (string, error) {
-	if gpuPath == "" {
-		return "", errors.New("GPU path not available")
+	if gpuPaths == nil || gpuPaths.HwMon == "" {
+		return "", errors.New("GPU hwmon path not available")
 	}
 	
-	path := filepath.Clean(filepath.Join(gpuPath, filename))
+	path := filepath.Clean(filepath.Join(gpuPaths.HwMon, filename))
 	// Validate that the path is within expected system directory and doesn't contain path traversal
 	if !strings.HasPrefix(path, "/sys/") || strings.Contains(path, "..") {
 		return "", errors.New("invalid system path")
@@ -85,13 +62,11 @@ func readMetricFile(filename string) (string, error) {
 }
 
 func readDeviceFile(filename string) (string, error) {
-	if gpuPath == "" {
-		return "", errors.New("GPU path not available")
+	if gpuPaths == nil || gpuPaths.Device == "" {
+		return "", errors.New("GPU device path not available")
 	}
 	
-	devicePath := filepath.Dir(filepath.Dir(gpuPath))
-	
-	path := filepath.Clean(filepath.Join(devicePath, filename))
+	path := filepath.Clean(filepath.Join(gpuPaths.Device, filename))
 	// Validate that the path is within expected system directory and doesn't contain path traversal
 	if !strings.HasPrefix(path, "/sys/") || strings.Contains(path, "..") {
 		return "", errors.New("invalid system path")

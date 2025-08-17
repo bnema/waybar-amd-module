@@ -50,6 +50,13 @@ waybar-amd-module gpu memtemp    # GPU memory temperature
 waybar-amd-module gpu powercap   # GPU power cap limit
 ```
 
+### Hardware Discovery
+
+```bash
+# Scan for AMD hardware and update cache
+waybar-amd-module scan
+```
+
 ### Flags
 
 - `--format json|text` - Output format (default: json)
@@ -122,3 +129,43 @@ waybar-amd-module gpu powercap   # GPU power cap limit
 ```
 
 Add `--nerd-font` flag to commands for icon display if you have nerd fonts installed.
+
+## Hardware Discovery & Caching
+
+The module automatically discovers AMD hardware paths on first run and caches them for fast subsequent startups:
+
+- **Cache Location**: `~/.cache/waybar-amd-module/paths.json` (XDG-compliant)
+- **Auto-Discovery**: Scans for AMD GPUs and CPUs using multiple detection methods
+- **Smart Validation**: Checks if cached paths still exist, rescans automatically if invalid
+- **Universal Support**: Works on any Linux system with AMD hardware
+
+### Cache Management
+
+```bash
+# Force rescan (useful after hardware changes)
+waybar-amd-module scan
+
+# View cached paths
+cat ~/.cache/waybar-amd-module/paths.json
+```
+
+### Detection Methods
+
+**GPU Discovery:**
+- Primary: `/sys/class/drm/card*` with amdgpu driver detection
+- Fallback: `/sys/bus/pci/drivers/amdgpu/*/hwmon/`
+- Validates essential metric files exist
+
+**CPU Discovery:**
+- Detects AMD CPUs via `/proc/cpuinfo` (AuthenticAMD)
+- Finds k10temp sensor in `/sys/class/hwmon/`
+- Locates cpufreq paths and boost controls
+
+**Power Discovery:**
+- Battery: `/sys/class/power_supply/BAT*/`
+- RAPL: `/sys/class/powercap/intel-rapl/` or `/sys/class/powercap/amd-rapl/`
+
+The cache is automatically regenerated if:
+- Cache file doesn't exist
+- Cached hardware paths become invalid
+- Manual `waybar-amd-module scan` command is run

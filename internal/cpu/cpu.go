@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bnema/waybar-amd-module/internal/discovery"
 )
 
 // Metrics contains comprehensive CPU monitoring data
@@ -33,6 +35,17 @@ type WaybarOutput struct {
 	Text    string `json:"text"`
 	Tooltip string `json:"tooltip"`
 	Class   string `json:"class"`
+}
+
+var cpuPaths *discovery.CPUPaths
+
+// Initialize sets up the CPU package with discovered paths
+func Initialize(cache *discovery.PathCache) error {
+	if cache.CPU == nil {
+		return errors.New("no CPU paths found in cache")
+	}
+	cpuPaths = cache.CPU
+	return nil
 }
 
 type cpuStat struct {
@@ -139,49 +152,36 @@ func GetUsage() (float64, error) {
 
 // GetTemperature reads CPU temperature from k10temp sensor in Celsius
 func GetTemperature() (int, error) {
-	// Find k10temp hwmon device
-	hwmonDirs, err := filepath.Glob("/sys/class/hwmon/hwmon*")
+	if cpuPaths == nil || cpuPaths.HwMon == "" {
+		return 0, errors.New("CPU hwmon path not available")
+	}
+	
+	tempFile := filepath.Clean(filepath.Join(cpuPaths.HwMon, "temp1_input"))
+	// Validate that the path is within expected system directory and doesn't contain path traversal
+	if !strings.HasPrefix(tempFile, "/sys/") || strings.Contains(tempFile, "..") {
+		return 0, errors.New("invalid system path")
+	}
+	
+	tempData, err := os.ReadFile(tempFile) // #nosec G304 - path is validated above
 	if err != nil {
 		return 0, err
 	}
 	
-	for _, hwmonDir := range hwmonDirs {
-		nameFile := filepath.Clean(filepath.Join(hwmonDir, "name"))
-		// Validate that the path is within expected system directory and doesn't contain path traversal
-		if !strings.HasPrefix(nameFile, "/sys/class/hwmon/") || strings.Contains(nameFile, "..") {
-			continue
-		}
-		nameData, err := os.ReadFile(nameFile) // #nosec G304 - path is validated above
-		if err != nil {
-			continue
-		}
-		
-		if strings.TrimSpace(string(nameData)) == "k10temp" {
-			tempFile := filepath.Clean(filepath.Join(hwmonDir, "temp1_input"))
-			// Validate that the path is within expected system directory and doesn't contain path traversal
-			if !strings.HasPrefix(tempFile, "/sys/class/hwmon/") || strings.Contains(tempFile, "..") {
-				continue
-			}
-			tempData, err := os.ReadFile(tempFile) // #nosec G304 - path is validated above
-			if err != nil {
-				continue
-			}
-			
-			tempMillidegrees, err := strconv.ParseInt(strings.TrimSpace(string(tempData)), 10, 64)
-			if err != nil {
-				continue
-			}
-			
-			return int(tempMillidegrees / 1000), nil
-		}
+	tempMillidegrees, err := strconv.ParseInt(strings.TrimSpace(string(tempData)), 10, 64)
+	if err != nil {
+		return 0, err
 	}
 	
-	return 0, errors.New("k10temp not found")
+	return int(tempMillidegrees / 1000), nil
 }
 
 // GetFrequency returns average CPU frequency across all cores in GHz
 func GetFrequency() (float64, error) {
-	cpuDirs, err := filepath.Glob("/sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq")
+	if cpuPaths == nil || cpuPaths.CPUFreqBase == "" {
+		return 0, errors.New("CPU frequency path not available")
+	}
+	
+	cpuDirs, err := filepath.Glob(filepath.Join(cpuPaths.CPUFreqBase, "cpu*/cpufreq/scaling_cur_freq"))
 	if err != nil {
 		return 0, err
 	}
@@ -285,7 +285,12 @@ func GetLoadAverage() (float64, error) {
 
 // GetGovernor returns the current CPU frequency scaling governor
 func GetGovernor() (string, error) {
-	data, err := os.ReadFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
+	if cpuPaths == nil || cpuPaths.CPUFreqBase == "" {
+		return "", errors.New("CPU frequency path not available")
+	}
+	
+	govFile := filepath.Join(cpuPaths.CPUFreqBase, "cpu0/cpufreq/scaling_governor")
+	data, err := os.ReadFile(govFile)
 	if err != nil {
 		return "", err
 	}
@@ -295,7 +300,11 @@ func GetGovernor() (string, error) {
 
 // GetBoostEnabled checks if CPU frequency boost is enabled
 func GetBoostEnabled() (bool, error) {
-	data, err := os.ReadFile("/sys/devices/system/cpu/cpu0/cpufreq/boost")
+	if cpuPaths == nil || cpuPaths.BoostPath == "" {
+		return false, errors.New("CPU boost path not available")
+	}
+	
+	data, err := os.ReadFile(cpuPaths.BoostPath)
 	if err != nil {
 		return false, err
 	}
@@ -306,12 +315,18 @@ func GetBoostEnabled() (bool, error) {
 
 // GetMinMaxFreq returns the minimum and maximum CPU frequencies in GHz
 func GetMinMaxFreq() (float64, float64, error) {
-	minData, err := os.ReadFile("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq")
+	if cpuPaths == nil || cpuPaths.CPUFreqBase == "" {
+		return 0, 0, errors.New("CPU frequency path not available")
+	}
+	
+	minFile := filepath.Join(cpuPaths.CPUFreqBase, "cpu0/cpufreq/cpuinfo_min_freq")
+	minData, err := os.ReadFile(minFile)
 	if err != nil {
 		return 0, 0, err
 	}
 	
-	maxData, err := os.ReadFile("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq")
+	maxFile := filepath.Join(cpuPaths.CPUFreqBase, "cpu0/cpufreq/cpuinfo_max_freq")
+	maxData, err := os.ReadFile(maxFile)
 	if err != nil {
 		return 0, 0, err
 	}
