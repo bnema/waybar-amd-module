@@ -137,7 +137,7 @@ func (c *PathCache) validateGPUPaths(gpu *GPUPaths) bool {
 		}
 	}
 
-	// Check device files
+	// Check device files (optional - don't fail validation if missing)
 	deviceFiles := []string{
 		"gpu_busy_percent",
 		"mem_info_vram_total",
@@ -146,7 +146,8 @@ func (c *PathCache) validateGPUPaths(gpu *GPUPaths) bool {
 	for _, file := range deviceFiles {
 		path := filepath.Join(gpu.Device, file)
 		if _, err := os.Stat(path); err != nil {
-			// These are optional, don't fail validation
+			// These are optional, continue checking others
+			continue
 		}
 	}
 
