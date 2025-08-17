@@ -215,10 +215,10 @@ var cpuAllCmd = &cobra.Command{
 			return
 		}
 
-		text, tooltip := formatCPUWithSymbols(metrics)
-		
 		switch formatFlag {
 		case jsonFormat:
+			text := formatCPUAllMetrics(metrics)
+			_, tooltip := formatCPUWithSymbols(metrics)
 			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUAllMetrics(metrics))

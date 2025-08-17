@@ -37,7 +37,7 @@ waybar-amd-module cpu power      # System power consumption (charging/dischargin
 # All GPU metrics
 waybar-amd-module gpu all
 
-# Individual metrics  
+# Individual metrics
 waybar-amd-module gpu power      # GPU power consumption
 waybar-amd-module gpu temp       # GPU temperature
 waybar-amd-module gpu freq       # GPU frequency
@@ -67,7 +67,7 @@ waybar-amd-module scan
 
 ### CPU All Metrics (JSON)
 ```json
-{"text":"15.6% 42°C 1.6GHz 12","tooltip":"Usage: 15.6%\nTemp: 42°C\nFreq: 1.6GHz\nCores: 12\nMemory: 45.2%\nLoad: 0.82\nGovernor: performance\nBoost: true\nMin/Max Freq: 0.4-4.2GHz\nIO Wait: 2.1%\nSystem Power: +67.3W charging","class":"custom-cpu"}
+{"text":"15.6% 42°C 1.6GHz 12 cores 45.2% memory 0.82 load performance true boost 0.4-4.2GHz 2.1% iowait +67.3W system","tooltip":"Usage: 15.6%\nTemp: 42°C\nFreq: 1.6GHz\nCores: 12\nMemory: 45.2%\nLoad: 0.82\nGovernor: performance\nBoost: true\nMin/Max Freq: 0.4-4.2GHz\nIO Wait: 2.1%\nSystem Power: +67.3W charging","class":"custom-cpu"}
 ```
 
 ### CPU Individual Metric (JSON)
@@ -82,7 +82,7 @@ waybar-amd-module scan
 
 ### GPU All Metrics (JSON)
 ```json
-{"text":"5.2W 41°C 0.4GHz 0%","tooltip":"Power: 5.2W\nTemp: 41°C\nFreq: 0.4GHz\nUtil: 0%\nMemory: 46.9%\nFan: 0 RPM\nVoltage: 0.91V\nJunction: 0°C\nMemory Temp: 0°C\nPower Cap: 0.0W","class":"custom-gpu"}
+{"text":"5.2W 41°C 0.4GHz 0% util 46.9% memory 0 RPM 0.91V 0°C junction 0°C memtemp 0.0W cap","tooltip":"Power: 5.2W\nTemp: 41°C\nFreq: 0.4GHz\nUtil: 0%\nMemory: 46.9%\nFan: 0 RPM\nVoltage: 0.91V\nJunction: 0°C\nMemory Temp: 0°C\nPower Cap: 0.0W","class":"custom-gpu"}
 ```
 
 ### GPU Individual Metric (JSON)
@@ -92,11 +92,11 @@ waybar-amd-module scan
 
 ### JSON Output without Tooltip (`--no-tooltip`)
 ```json
-{"class":"custom-cpu","text":"15.6% 42°C 1.6GHz 12 cores"}
+{"class":"custom-cpu","text":"15.6% 42°C 1.6GHz 12 cores 45.2% memory 0.82 load performance true boost 0.4-4.2GHz 2.1% iowait +67.3W system"}
 ```
 
 ```json
-{"class":"custom-gpu","text":"5.2W 41°C 0.4GHz 0%"}
+{"class":"custom-gpu","text":"5.2W 41°C 0.4GHz 0% util 46.9% memory 0 RPM 0.91V 0°C junction 0°C memtemp 0.0W cap"}
 ```
 
 ### Text Format Examples

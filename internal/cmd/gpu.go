@@ -168,10 +168,10 @@ var gpuAllCmd = &cobra.Command{
 			return
 		}
 
-		text, tooltip := formatWithSymbols(metrics)
-		
 		switch formatFlag {
 		case jsonFormat:
+			text := formatGPUAllMetrics(metrics)
+			_, tooltip := formatWithSymbols(metrics)
 			formatting.FormatJSONOutput(text, tooltip, "custom-gpu", noTooltipFlag)
 		default:
 			fmt.Println(formatGPUAllMetrics(metrics))
