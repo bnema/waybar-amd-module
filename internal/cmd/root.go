@@ -16,7 +16,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "waybar-amd-module",
 	Short: "AMD GPU and CPU metrics for Waybar",
-	Long:  "A tool to monitor AMD GPU and CPU power, temperature, frequency, and utilization for Waybar",
+	Long:  "Monitor AMD GPU and CPU metrics with automatic hardware discovery and smart caching",
 }
 
 func init() {
