@@ -2,11 +2,11 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/bnema/waybar-amd-module/internal/formatting"
 	"github.com/bnema/waybar-amd-module/internal/gpu"
 	"github.com/bnema/waybar-amd-module/internal/nerdfonts"
 )
@@ -142,6 +142,7 @@ func formatPowerCap(powerCap float64) string {
 	return fmt.Sprintf("%.1fW (cap)", powerCap)
 }
 
+
 var gpuCmd = &cobra.Command{
 	Use:   "gpu",
 	Short: "AMD GPU monitoring commands",
@@ -152,6 +153,10 @@ var gpuAllCmd = &cobra.Command{
 	Use:   "all",
 	Short: "Get all GPU metrics",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		metrics, err := gpu.GetAllMetrics()
 		if err != nil {
 			switch formatFlag {
@@ -167,13 +172,7 @@ var gpuAllCmd = &cobra.Command{
 		
 		switch formatFlag {
 		case jsonFormat:
-			output := gpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-gpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-gpu", noTooltipFlag)
 		default:
 			fmt.Println(formatGPUAllMetrics(metrics))
 		}
@@ -184,6 +183,10 @@ var gpuPowerCmd = &cobra.Command{
 	Use:   "power",
 	Short: "Get GPU power consumption",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		power, err := gpu.GetPower()
 		if err != nil {
 			switch formatFlag {
@@ -207,13 +210,7 @@ var gpuPowerCmd = &cobra.Command{
 			text := formatPower(power)
 			_, tooltip := formatWithSymbols(metrics)
 			
-			output := gpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-gpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-gpu", noTooltipFlag)
 		default:
 			fmt.Println(formatPower(power))
 		}
@@ -224,6 +221,10 @@ var gpuTempCmd = &cobra.Command{
 	Use:   "temp",
 	Short: "Get GPU temperature",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		temp, err := gpu.GetTemperature()
 		if err != nil {
 			switch formatFlag {
@@ -247,13 +248,7 @@ var gpuTempCmd = &cobra.Command{
 			text := formatTemp(temp)
 			_, tooltip := formatWithSymbols(metrics)
 			
-			output := gpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-gpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-gpu", noTooltipFlag)
 		default:
 			fmt.Println(formatTemp(temp))
 		}
@@ -264,6 +259,10 @@ var gpuFreqCmd = &cobra.Command{
 	Use:   "freq",
 	Short: "Get GPU frequency",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		freq, err := gpu.GetFrequency()
 		if err != nil {
 			switch formatFlag {
@@ -287,13 +286,7 @@ var gpuFreqCmd = &cobra.Command{
 			text := formatFreq(freq)
 			_, tooltip := formatWithSymbols(metrics)
 			
-			output := gpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-gpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-gpu", noTooltipFlag)
 		default:
 			fmt.Println(formatFreq(freq))
 		}
@@ -304,6 +297,10 @@ var gpuUtilCmd = &cobra.Command{
 	Use:   "util",
 	Short: "Get GPU utilization",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		util, err := gpu.GetUtilization()
 		if err != nil {
 			switch formatFlag {
@@ -327,13 +324,7 @@ var gpuUtilCmd = &cobra.Command{
 			text := formatUtil(util)
 			_, tooltip := formatWithSymbols(metrics)
 			
-			output := gpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-gpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-gpu", noTooltipFlag)
 		default:
 			fmt.Println(formatUtil(util))
 		}
@@ -344,6 +335,10 @@ var gpuMemoryCmd = &cobra.Command{
 	Use:   "memory",
 	Short: "Get VRAM usage percentage",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		memory, err := gpu.GetMemoryUsage()
 		if err != nil {
 			switch formatFlag {
@@ -367,13 +362,7 @@ var gpuMemoryCmd = &cobra.Command{
 			text := formatMemory(memory)
 			_, tooltip := formatWithSymbols(metrics)
 			
-			output := gpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-gpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-gpu", noTooltipFlag)
 		default:
 			fmt.Println(formatMemory(memory))
 		}
@@ -384,6 +373,10 @@ var gpuFanCmd = &cobra.Command{
 	Use:   "fan",
 	Short: "Get GPU fan speed in RPM",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		fan, err := gpu.GetFanSpeed()
 		if err != nil {
 			switch formatFlag {
@@ -407,13 +400,7 @@ var gpuFanCmd = &cobra.Command{
 			text := formatFan(fan)
 			_, tooltip := formatWithSymbols(metrics)
 			
-			output := gpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-gpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-gpu", noTooltipFlag)
 		default:
 			fmt.Println(formatFan(fan))
 		}
@@ -424,6 +411,10 @@ var gpuVoltageCmd = &cobra.Command{
 	Use:   "voltage",
 	Short: "Get GPU voltage",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		voltage, err := gpu.GetVoltage()
 		if err != nil {
 			switch formatFlag {
@@ -447,13 +438,7 @@ var gpuVoltageCmd = &cobra.Command{
 			text := formatVoltage(voltage)
 			_, tooltip := formatWithSymbols(metrics)
 			
-			output := gpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-gpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-gpu", noTooltipFlag)
 		default:
 			fmt.Println(formatVoltage(voltage))
 		}
@@ -464,6 +449,10 @@ var gpuJunctionCmd = &cobra.Command{
 	Use:   "junction",
 	Short: "Get GPU junction temperature",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		junctionTemp, err := gpu.GetJunctionTemp()
 		if err != nil {
 			switch formatFlag {
@@ -487,13 +476,7 @@ var gpuJunctionCmd = &cobra.Command{
 			text := formatJunctionTemp(junctionTemp)
 			_, tooltip := formatWithSymbols(metrics)
 			
-			output := gpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-gpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-gpu", noTooltipFlag)
 		default:
 			fmt.Println(formatJunctionTemp(junctionTemp))
 		}
@@ -504,6 +487,10 @@ var gpuMemTempCmd = &cobra.Command{
 	Use:   "memtemp",
 	Short: "Get GPU memory temperature",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		memTemp, err := gpu.GetMemoryTemp()
 		if err != nil {
 			switch formatFlag {
@@ -527,13 +514,7 @@ var gpuMemTempCmd = &cobra.Command{
 			text := formatMemoryTemp(memTemp)
 			_, tooltip := formatWithSymbols(metrics)
 			
-			output := gpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-gpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-gpu", noTooltipFlag)
 		default:
 			fmt.Println(formatMemoryTemp(memTemp))
 		}
@@ -544,6 +525,10 @@ var gpuPowerCapCmd = &cobra.Command{
 	Use:   "powercap",
 	Short: "Get GPU power cap limit",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		powerCap, err := gpu.GetPowerCap()
 		if err != nil {
 			switch formatFlag {
@@ -567,13 +552,7 @@ var gpuPowerCapCmd = &cobra.Command{
 			text := formatPowerCap(powerCap)
 			_, tooltip := formatWithSymbols(metrics)
 			
-			output := gpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-gpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-gpu", noTooltipFlag)
 		default:
 			fmt.Println(formatPowerCap(powerCap))
 		}

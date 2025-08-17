@@ -25,12 +25,6 @@ type Metrics struct {
 	PowerCap     float64 `json:"power_cap"`
 }
 
-// WaybarOutput represents the JSON structure expected by Waybar
-type WaybarOutput struct {
-	Text    string `json:"text"`
-	Tooltip string `json:"tooltip"`
-	Class   string `json:"class"`
-}
 
 var gpuPaths *discovery.GPUPaths
 

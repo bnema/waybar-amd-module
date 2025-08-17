@@ -2,12 +2,12 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/bnema/waybar-amd-module/internal/cpu"
+	"github.com/bnema/waybar-amd-module/internal/formatting"
 	"github.com/bnema/waybar-amd-module/internal/nerdfonts"
 )
 
@@ -200,6 +200,10 @@ var cpuAllCmd = &cobra.Command{
 	Use:   "all",
 	Short: "Get all CPU metrics",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		metrics, err := cpu.GetAllMetrics()
 		if err != nil {
 			switch formatFlag {
@@ -215,13 +219,7 @@ var cpuAllCmd = &cobra.Command{
 		
 		switch formatFlag {
 		case jsonFormat:
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUAllMetrics(metrics))
 		}
@@ -232,6 +230,10 @@ var cpuUsageCmd = &cobra.Command{
 	Use:   "usage",
 	Short: "Get CPU usage percentage",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		usage, err := cpu.GetUsage()
 		if err != nil {
 			switch formatFlag {
@@ -255,13 +257,7 @@ var cpuUsageCmd = &cobra.Command{
 			text := formatCPUUsage(usage)
 			_, tooltip := formatCPUWithSymbols(metrics)
 			
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUUsage(usage))
 		}
@@ -272,6 +268,9 @@ var cpuTempCmd = &cobra.Command{
 	Use:   "temp",
 	Short: "Get CPU temperature",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
 		temp, err := cpu.GetTemperature()
 		if err != nil {
 			switch formatFlag {
@@ -295,13 +294,7 @@ var cpuTempCmd = &cobra.Command{
 			text := formatCPUTemp(temp)
 			_, tooltip := formatCPUWithSymbols(metrics)
 			
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUTemp(temp))
 		}
@@ -312,6 +305,9 @@ var cpuFreqCmd = &cobra.Command{
 	Use:   "freq",
 	Short: "Get CPU frequency",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
 		freq, err := cpu.GetFrequency()
 		if err != nil {
 			switch formatFlag {
@@ -335,13 +331,7 @@ var cpuFreqCmd = &cobra.Command{
 			text := formatCPUFreq(freq)
 			_, tooltip := formatCPUWithSymbols(metrics)
 			
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUFreq(freq))
 		}
@@ -352,6 +342,10 @@ var cpuCoresCmd = &cobra.Command{
 	Use:   "cores",
 	Short: "Get CPU core count",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		cores, err := cpu.GetCores()
 		if err != nil {
 			switch formatFlag {
@@ -375,13 +369,7 @@ var cpuCoresCmd = &cobra.Command{
 			text := formatCPUCores(cores)
 			_, tooltip := formatCPUWithSymbols(metrics)
 			
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUCores(cores))
 		}
@@ -392,6 +380,10 @@ var cpuMemoryCmd = &cobra.Command{
 	Use:   "memory",
 	Short: "Get system memory usage percentage",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		memory, err := cpu.GetMemoryUsage()
 		if err != nil {
 			switch formatFlag {
@@ -415,13 +407,7 @@ var cpuMemoryCmd = &cobra.Command{
 			text := formatCPUMemory(memory)
 			_, tooltip := formatCPUWithSymbols(metrics)
 			
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUMemory(memory))
 		}
@@ -432,6 +418,10 @@ var cpuLoadCmd = &cobra.Command{
 	Use:   "load",
 	Short: "Get 1-minute load average",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		load, err := cpu.GetLoadAverage()
 		if err != nil {
 			switch formatFlag {
@@ -455,13 +445,7 @@ var cpuLoadCmd = &cobra.Command{
 			text := formatCPULoad(load)
 			_, tooltip := formatCPUWithSymbols(metrics)
 			
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPULoad(load))
 		}
@@ -472,6 +456,10 @@ var cpuGovernorCmd = &cobra.Command{
 	Use:   "governor",
 	Short: "Get CPU frequency scaling governor",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		governor, err := cpu.GetGovernor()
 		if err != nil {
 			switch formatFlag {
@@ -495,13 +483,7 @@ var cpuGovernorCmd = &cobra.Command{
 			text := formatCPUGovernor(governor)
 			_, tooltip := formatCPUWithSymbols(metrics)
 			
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUGovernor(governor))
 		}
@@ -512,6 +494,10 @@ var cpuBoostCmd = &cobra.Command{
 	Use:   "boost",
 	Short: "Get CPU boost enabled status",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		boost, err := cpu.GetBoostEnabled()
 		if err != nil {
 			switch formatFlag {
@@ -535,13 +521,7 @@ var cpuBoostCmd = &cobra.Command{
 			text := formatCPUBoost(boost)
 			_, tooltip := formatCPUWithSymbols(metrics)
 			
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUBoost(boost))
 		}
@@ -552,6 +532,10 @@ var cpuMinFreqCmd = &cobra.Command{
 	Use:   "minfreq",
 	Short: "Get minimum CPU frequency",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		minFreq, _, err := cpu.GetMinMaxFreq()
 		if err != nil {
 			switch formatFlag {
@@ -575,13 +559,7 @@ var cpuMinFreqCmd = &cobra.Command{
 			text := formatCPUFreq(minFreq)
 			_, tooltip := formatCPUWithSymbols(metrics)
 			
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUFreq(minFreq))
 		}
@@ -592,6 +570,10 @@ var cpuMaxFreqCmd = &cobra.Command{
 	Use:   "maxfreq",
 	Short: "Get maximum CPU frequency",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		_, maxFreq, err := cpu.GetMinMaxFreq()
 		if err != nil {
 			switch formatFlag {
@@ -615,13 +597,7 @@ var cpuMaxFreqCmd = &cobra.Command{
 			text := formatCPUFreq(maxFreq)
 			_, tooltip := formatCPUWithSymbols(metrics)
 			
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUFreq(maxFreq))
 		}
@@ -632,6 +608,10 @@ var cpuIOWaitCmd = &cobra.Command{
 	Use:   "iowait",
 	Short: "Get I/O wait percentage",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		iowait, err := cpu.GetIOWait()
 		if err != nil {
 			switch formatFlag {
@@ -655,13 +635,7 @@ var cpuIOWaitCmd = &cobra.Command{
 			text := formatCPUIOWait(iowait)
 			_, tooltip := formatCPUWithSymbols(metrics)
 			
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUIOWait(iowait))
 		}
@@ -672,6 +646,10 @@ var cpuPowerCmd = &cobra.Command{
 	Use:   "power",
 	Short: "Get overall system power consumption",
 	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
 		power, err := cpu.GetPower()
 		if err != nil {
 			switch formatFlag {
@@ -695,13 +673,7 @@ var cpuPowerCmd = &cobra.Command{
 			text := formatCPUPower(power)
 			_, tooltip := formatCPUWithSymbols(metrics)
 			
-			output := cpu.WaybarOutput{
-				Text:    text,
-				Tooltip: tooltip,
-				Class:   "custom-cpu",
-			}
-			jsonData, _ := json.Marshal(output)
-			fmt.Println(string(jsonData))
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
 		default:
 			fmt.Println(formatCPUPower(power))
 		}

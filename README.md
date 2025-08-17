@@ -61,6 +61,7 @@ waybar-amd-module scan
 
 - `--format json|text` - Output format (default: json)
 - `--nerd-font` - Use nerd font symbols for enhanced display
+- `--no-tooltip` - Remove tooltip field from JSON output (only works with `--format=json`)
 
 ## Example Output
 
@@ -87,6 +88,15 @@ waybar-amd-module scan
 ### GPU Individual Metric (JSON)
 ```json
 {"text":"5.1W","tooltip":"Power: 5.1W\nTemp: 41°C\nFreq: 0.4GHz\nUtil: 0%\nMemory: 46.9%\nFan: 0 RPM\nVoltage: 0.91V\nJunction: 0°C\nMemory Temp: 0°C\nPower Cap: 0.0W","class":"custom-gpu"}
+```
+
+### JSON Output without Tooltip (`--no-tooltip`)
+```json
+{"class":"custom-cpu","text":"15.6% 42°C 1.6GHz 12 cores"}
+```
+
+```json
+{"class":"custom-gpu","text":"5.2W 41°C 0.4GHz 0%"}
 ```
 
 ### Text Format Examples
@@ -124,11 +134,20 @@ waybar-amd-module scan
     "exec": "waybar-amd-module cpu all",
     "return-type": "json",
     "interval": 2
+  },
+  "custom/cpu-minimal": {
+    "exec": "waybar-amd-module cpu usage --no-tooltip",
+    "return-type": "json",
+    "interval": 2
   }
 }
 ```
 
-Add `--nerd-font` flag to commands for icon display if you have nerd fonts installed.
+### Available Options
+
+- Add `--nerd-font` flag for icon display if you have nerd fonts installed
+- Add `--no-tooltip` flag to remove tooltips and reduce JSON size
+- Use `--format=text` for simple text output without JSON wrapper
 
 ## Hardware Discovery & Caching
 

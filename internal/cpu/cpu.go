@@ -30,12 +30,6 @@ type Metrics struct {
 }
 
 
-// WaybarOutput represents the JSON structure expected by Waybar
-type WaybarOutput struct {
-	Text    string `json:"text"`
-	Tooltip string `json:"tooltip"`
-	Class   string `json:"class"`
-}
 
 var cpuPaths *discovery.CPUPaths
 

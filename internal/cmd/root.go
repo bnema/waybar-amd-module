@@ -9,6 +9,7 @@ import (
 var (
 	formatFlag    string
 	nerdFontFlag  bool
+	noTooltipFlag bool
 	
 	pathCache *discovery.PathCache
 )
@@ -22,6 +23,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.PersistentFlags().StringVar(&formatFlag, "format", "json", "Output format (json/text)")
 	rootCmd.PersistentFlags().BoolVar(&nerdFontFlag, "nerd-font", false, "Use nerd font symbols in output")
+	rootCmd.PersistentFlags().BoolVar(&noTooltipFlag, "no-tooltip", false, "Remove tooltip field from JSON output")
 	
 	rootCmd.AddCommand(gpuCmd)
 	rootCmd.AddCommand(cpuCmd)
