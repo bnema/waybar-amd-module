@@ -18,11 +18,13 @@ type GPUPaths struct {
 
 // CPUPaths contains all discovered CPU-related paths
 type CPUPaths struct {
-	HwMon      string `json:"hwmon"`
-	SensorType string `json:"sensor_type"`
-	CPUFreqBase string `json:"cpufreq_base"`
-	BoostPath  string `json:"boost_path"`
-	CoreCount  int    `json:"core_count"`
+	HwMon           string `json:"hwmon"`
+	SensorType      string `json:"sensor_type"`
+	CPUFreqBase     string `json:"cpufreq_base"`
+	BoostPath       string `json:"boost_path"`
+	CoreCount       int    `json:"core_count"`
+	AMDPstateBase   string `json:"amd_pstate_base"`
+	AMDPstatePerCPU string `json:"amd_pstate_per_cpu"`
 }
 
 // PowerPaths contains power-related paths

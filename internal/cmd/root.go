@@ -7,9 +7,10 @@ import (
 )
 
 var (
-	formatFlag    string
-	nerdFontFlag  bool
-	noTooltipFlag bool
+	formatFlag      string
+	nerdFontFlag    bool
+	noTooltipFlag   bool
+	withPstateFlag  bool
 	
 	pathCache *discovery.PathCache
 )
@@ -24,6 +25,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&formatFlag, "format", "json", "Output format (json/text)")
 	rootCmd.PersistentFlags().BoolVar(&nerdFontFlag, "nerd-font", false, "Use nerd font symbols in output")
 	rootCmd.PersistentFlags().BoolVar(&noTooltipFlag, "no-tooltip", false, "Remove tooltip field from JSON output")
+	rootCmd.PersistentFlags().BoolVar(&withPstateFlag, "with-pstate", false, "Include AMD pstate information in CPU metrics")
 	
 	rootCmd.AddCommand(gpuCmd)
 	rootCmd.AddCommand(cpuCmd)

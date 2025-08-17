@@ -46,6 +46,22 @@ func formatCPUWithSymbols(metrics *cpu.Metrics) (string, string) {
 				return fmt.Sprintf("%s System Power: %.1fW", nerdfonts.CPUPower, metrics.Power)
 			}(),
 		}
+		
+		// Add pstate information if flag is enabled and available
+		if withPstateFlag && metrics.PstateStatus != "not_available" {
+			pstateLines := []string{
+				fmt.Sprintf("%s Pstate Status: %s", nerdfonts.CPUPstateStatus, metrics.PstateStatus),
+				fmt.Sprintf("%s Prefcore: %s", nerdfonts.CPUPstatePrefcore, metrics.PstatePrefcore),
+				fmt.Sprintf("%s Energy Perf: %s", nerdfonts.CPUEnergyPerfPref, metrics.EnergyPerfPreference),
+			}
+			if metrics.HighestPerf > 0 {
+				pstateLines = append(pstateLines, fmt.Sprintf("%s Highest Perf: %d", nerdfonts.CPUHighestPerf, metrics.HighestPerf))
+			}
+			if metrics.LowestNonlinearFreq > 0 {
+				pstateLines = append(pstateLines, fmt.Sprintf("%s Lowest Freq: %.2fGHz", nerdfonts.CPULowestNonlinearFreq, metrics.LowestNonlinearFreq))
+			}
+			tooltipLines = append(tooltipLines, pstateLines...)
+		}
 		return text, strings.Join(tooltipLines, "\n")
 	}
 	text = fmt.Sprintf("%.1f%% %d°C %.1fGHz %d cores", metrics.Usage, metrics.Temperature, metrics.Frequency, metrics.Cores)
@@ -71,12 +87,29 @@ func formatCPUWithSymbols(metrics *cpu.Metrics) (string, string) {
 			return fmt.Sprintf("System Power: %.1fW", metrics.Power)
 		}(),
 	}
+	
+	// Add pstate information if flag is enabled and available
+	if withPstateFlag && metrics.PstateStatus != "not_available" {
+		pstateLines := []string{
+			fmt.Sprintf("Pstate Status: %s", metrics.PstateStatus),
+			fmt.Sprintf("Prefcore: %s", metrics.PstatePrefcore),
+			fmt.Sprintf("Energy Perf: %s", metrics.EnergyPerfPreference),
+		}
+		if metrics.HighestPerf > 0 {
+			pstateLines = append(pstateLines, fmt.Sprintf("Highest Perf: %d", metrics.HighestPerf))
+		}
+		if metrics.LowestNonlinearFreq > 0 {
+			pstateLines = append(pstateLines, fmt.Sprintf("Lowest Freq: %.2fGHz", metrics.LowestNonlinearFreq))
+		}
+		tooltipLines = append(tooltipLines, pstateLines...)
+	}
 	return text, strings.Join(tooltipLines, "\n")
 }
 
 func formatCPUAllMetrics(metrics *cpu.Metrics) string {
+	baseText := ""
 	if nerdFontFlag {
-		return fmt.Sprintf("%s %.1f%% %s %d°C %s %.1fGHz %s %d %s %.1f%% %s %.2f %s %s %s %t %s %.1f-%.1fGHz %s %.1f%% %s %.1fW",
+		baseText = fmt.Sprintf("%s %.1f%% %s %d°C %s %.1fGHz %s %d %s %.1f%% %s %.2f %s %s %s %t %s %.1f-%.1fGHz %s %.1f%% %s %.1fW",
 			nerdfonts.CPUUsage, metrics.Usage,
 			nerdfonts.CPUTemp, metrics.Temperature,
 			nerdfonts.CPUFreq, metrics.Frequency,
@@ -88,11 +121,27 @@ func formatCPUAllMetrics(metrics *cpu.Metrics) string {
 			nerdfonts.CPUMinMax, metrics.MinFreq, metrics.MaxFreq,
 			nerdfonts.CPUIOwait, metrics.IOWait,
 			nerdfonts.CPUPower, metrics.Power)
+	} else {
+		baseText = fmt.Sprintf("%.1f%% %d°C %.1fGHz %d cores %.1f%% memory %.2f load %s %t boost %.1f-%.1fGHz %.1f%% iowait %.1fW system",
+			metrics.Usage, metrics.Temperature, metrics.Frequency, metrics.Cores,
+			metrics.MemoryUsage, metrics.LoadAvg, metrics.Governor, metrics.BoostEnabled,
+			metrics.MinFreq, metrics.MaxFreq, metrics.IOWait, metrics.Power)
 	}
-	return fmt.Sprintf("%.1f%% %d°C %.1fGHz %d cores %.1f%% memory %.2f load %s %t boost %.1f-%.1fGHz %.1f%% iowait %.1fW system",
-		metrics.Usage, metrics.Temperature, metrics.Frequency, metrics.Cores,
-		metrics.MemoryUsage, metrics.LoadAvg, metrics.Governor, metrics.BoostEnabled,
-		metrics.MinFreq, metrics.MaxFreq, metrics.IOWait, metrics.Power)
+	
+	// Add pstate information if flag is enabled and available
+	if withPstateFlag && metrics.PstateStatus != "not_available" {
+		if nerdFontFlag {
+			baseText += fmt.Sprintf(" %s %s %s %s %s %s",
+				nerdfonts.CPUPstateStatus, metrics.PstateStatus,
+				nerdfonts.CPUEnergyPerfPref, metrics.EnergyPerfPreference,
+				nerdfonts.CPUPstatePrefcore, metrics.PstatePrefcore)
+		} else {
+			baseText += fmt.Sprintf(" pstate:%s energy:%s prefcore:%s",
+				metrics.PstateStatus, metrics.EnergyPerfPreference, metrics.PstatePrefcore)
+		}
+	}
+	
+	return baseText
 }
 
 func formatCPUUsage(usage float64) string {
@@ -188,6 +237,20 @@ func formatCPUPower(power float64) string {
 		return fmt.Sprintf("%s %s%.1fW%s", nerdfonts.CPUPower, sign, power, action)
 	}
 	return fmt.Sprintf("%s%.1fW%s", sign, power, action)
+}
+
+func formatPstateStatus(status string) string {
+	if nerdFontFlag {
+		return fmt.Sprintf("%s %s", nerdfonts.CPUPstateStatus, status)
+	}
+	return fmt.Sprintf("Pstate: %s", status)
+}
+
+func formatEnergyPerfPreference(energyPerf string) string {
+	if nerdFontFlag {
+		return fmt.Sprintf("%s %s", nerdfonts.CPUEnergyPerfPref, energyPerf)
+	}
+	return fmt.Sprintf("Energy Perf: %s", energyPerf)
 }
 
 var cpuCmd = &cobra.Command{
@@ -680,6 +743,127 @@ var cpuPowerCmd = &cobra.Command{
 	},
 }
 
+var cpuPstateStatusCmd = &cobra.Command{
+	Use:   "pstate-status",
+	Short: "Get AMD pstate driver status",
+	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
+		status, err := cpu.GetPstateStatus()
+		if err != nil {
+			switch formatFlag {
+			case jsonFormat:
+				fmt.Println("{}")
+			default:
+				return
+			}
+			return
+		}
+
+		switch formatFlag {
+		case jsonFormat:
+			// Get all metrics for tooltip
+			metrics, err := cpu.GetAllMetrics()
+			if err != nil {
+				fmt.Println("{}")
+				return
+			}
+			
+			text := formatPstateStatus(status)
+			_, tooltip := formatCPUWithSymbols(metrics)
+			
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
+		default:
+			fmt.Println(formatPstateStatus(status))
+		}
+	},
+}
+
+var cpuEnergyPerfCmd = &cobra.Command{
+	Use:   "energy-perf",
+	Short: "Get energy performance preference",
+	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
+		energyPerf, err := cpu.GetEnergyPerfPreference()
+		if err != nil {
+			switch formatFlag {
+			case jsonFormat:
+				fmt.Println("{}")
+			default:
+				return
+			}
+			return
+		}
+
+		switch formatFlag {
+		case jsonFormat:
+			// Get all metrics for tooltip
+			metrics, err := cpu.GetAllMetrics()
+			if err != nil {
+				fmt.Println("{}")
+				return
+			}
+			
+			text := formatEnergyPerfPreference(energyPerf)
+			_, tooltip := formatCPUWithSymbols(metrics)
+			
+			formatting.FormatJSONOutput(text, tooltip, "custom-cpu", noTooltipFlag)
+		default:
+			fmt.Println(formatEnergyPerfPreference(energyPerf))
+		}
+	},
+}
+
+var cpuPstateCmd = &cobra.Command{
+	Use:   "pstate",
+	Short: "Get all AMD pstate information",
+	Run: func(_ *cobra.Command, _ []string) {
+		if !formatting.ValidateNoTooltipFlag(noTooltipFlag, formatFlag) {
+			return
+		}
+
+		// Get all pstate metrics
+		status, _ := cpu.GetPstateStatus()
+		prefcore, _ := cpu.GetPstatePrefcore()
+		energyPerf, _ := cpu.GetEnergyPerfPreference()
+		highestPerf, _ := cpu.GetHighestPerf()
+		lowestFreq, _ := cpu.GetLowestNonlinearFreq()
+
+		var pstateText string
+		if nerdFontFlag {
+			pstateText = fmt.Sprintf("%s %s %s %s %s %s %s %d %s %.2fGHz",
+				nerdfonts.CPUPstateStatus, status,
+				nerdfonts.CPUPstatePrefcore, prefcore,
+				nerdfonts.CPUEnergyPerfPref, energyPerf,
+				nerdfonts.CPUHighestPerf, highestPerf,
+				nerdfonts.CPULowestNonlinearFreq, lowestFreq)
+		} else {
+			pstateText = fmt.Sprintf("status:%s prefcore:%s energy:%s highest:%d lowest:%.2fGHz",
+				status, prefcore, energyPerf, highestPerf, lowestFreq)
+		}
+
+		switch formatFlag {
+		case jsonFormat:
+			// Get all metrics for tooltip
+			metrics, err := cpu.GetAllMetrics()
+			if err != nil {
+				fmt.Println("{}")
+				return
+			}
+			
+			_, tooltip := formatCPUWithSymbols(metrics)
+			formatting.FormatJSONOutput(pstateText, tooltip, "custom-cpu", noTooltipFlag)
+		default:
+			fmt.Println(pstateText)
+		}
+	},
+}
+
 func init() {
 	cpuCmd.AddCommand(cpuAllCmd)
 	cpuCmd.AddCommand(cpuUsageCmd)
@@ -694,4 +878,7 @@ func init() {
 	cpuCmd.AddCommand(cpuMaxFreqCmd)
 	cpuCmd.AddCommand(cpuIOWaitCmd)
 	cpuCmd.AddCommand(cpuPowerCmd)
+	cpuCmd.AddCommand(cpuPstateStatusCmd)
+	cpuCmd.AddCommand(cpuEnergyPerfCmd)
+	cpuCmd.AddCommand(cpuPstateCmd)
 }

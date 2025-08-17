@@ -170,12 +170,17 @@ func (c *PathCache) scanCPU() (*CPUPaths, error) {
 	// Find boost path
 	boostPath := c.findBoostPath()
 
+	// Find AMD pstate paths
+	amdPstateBase, amdPstatePerCPU := c.findAMDPstatePaths()
+
 	cpu := &CPUPaths{
-		HwMon:       hwmonPath,
-		SensorType:  sensorType,
-		CPUFreqBase: "/sys/devices/system/cpu",
-		BoostPath:   boostPath,
-		CoreCount:   runtime.NumCPU(),
+		HwMon:           hwmonPath,
+		SensorType:      sensorType,
+		CPUFreqBase:     "/sys/devices/system/cpu",
+		BoostPath:       boostPath,
+		CoreCount:       runtime.NumCPU(),
+		AMDPstateBase:   amdPstateBase,
+		AMDPstatePerCPU: amdPstatePerCPU,
 	}
 
 	return cpu, nil
@@ -237,6 +242,22 @@ func (c *PathCache) findBoostPath() string {
 	}
 
 	return ""
+}
+
+// findAMDPstatePaths finds AMD pstate paths
+func (c *PathCache) findAMDPstatePaths() (string, string) {
+	amdPstateBase := "/sys/devices/system/cpu/amd_pstate"
+	amdPstatePerCPU := "/sys/devices/system/cpu/cpu0/cpufreq"
+	
+	// Check if AMD pstate directory exists and has status file
+	if _, err := os.Stat(filepath.Join(amdPstateBase, "status")); err == nil {
+		// Verify per-CPU pstate files exist
+		if _, err := os.Stat(filepath.Join(amdPstatePerCPU, "energy_performance_preference")); err == nil {
+			return amdPstateBase, amdPstatePerCPU
+		}
+	}
+	
+	return "", ""
 }
 
 // scanPower discovers power-related paths

@@ -15,18 +15,23 @@ import (
 
 // Metrics contains comprehensive CPU monitoring data
 type Metrics struct {
-	Usage       float64 `json:"usage"`
-	Temperature int     `json:"temperature"`
-	Frequency   float64 `json:"frequency"`
-	Cores       int     `json:"cores"`
-	MemoryUsage float64 `json:"memory_usage"`
-	LoadAvg     float64 `json:"load_avg"`
-	Governor    string  `json:"governor"`
-	BoostEnabled bool   `json:"boost_enabled"`
-	MinFreq     float64 `json:"min_freq"`
-	MaxFreq     float64 `json:"max_freq"`
-	IOWait      float64 `json:"io_wait"`
-	Power       float64 `json:"power"`
+	Usage                 float64 `json:"usage"`
+	Temperature           int     `json:"temperature"`
+	Frequency             float64 `json:"frequency"`
+	Cores                 int     `json:"cores"`
+	MemoryUsage           float64 `json:"memory_usage"`
+	LoadAvg               float64 `json:"load_avg"`
+	Governor              string  `json:"governor"`
+	BoostEnabled          bool    `json:"boost_enabled"`
+	MinFreq               float64 `json:"min_freq"`
+	MaxFreq               float64 `json:"max_freq"`
+	IOWait                float64 `json:"io_wait"`
+	Power                 float64 `json:"power"`
+	PstateStatus          string  `json:"pstate_status"`
+	PstatePrefcore        string  `json:"pstate_prefcore"`
+	EnergyPerfPreference  string  `json:"energy_perf_preference"`
+	HighestPerf           int     `json:"highest_perf"`
+	LowestNonlinearFreq   float64 `json:"lowest_nonlinear_freq"`
 }
 
 
@@ -421,6 +426,92 @@ func GetPower() (float64, error) {
 	return 0, nil // No power information available or battery is full/unknown state
 }
 
+// GetPstateStatus returns the current AMD pstate driver status
+func GetPstateStatus() (string, error) {
+	if cpuPaths == nil || cpuPaths.AMDPstateBase == "" {
+		return "not_available", nil
+	}
+	
+	statusFile := filepath.Join(cpuPaths.AMDPstateBase, "status")
+	data, err := os.ReadFile(statusFile)
+	if err != nil {
+		return "not_available", nil
+	}
+	
+	return strings.TrimSpace(string(data)), nil
+}
+
+// GetPstatePrefcore returns the AMD pstate prefcore setting
+func GetPstatePrefcore() (string, error) {
+	if cpuPaths == nil || cpuPaths.AMDPstateBase == "" {
+		return "not_available", nil
+	}
+	
+	prefcoreFile := filepath.Join(cpuPaths.AMDPstateBase, "prefcore")
+	data, err := os.ReadFile(prefcoreFile)
+	if err != nil {
+		return "not_available", nil
+	}
+	
+	return strings.TrimSpace(string(data)), nil
+}
+
+// GetEnergyPerfPreference returns the current energy performance preference
+func GetEnergyPerfPreference() (string, error) {
+	if cpuPaths == nil || cpuPaths.AMDPstatePerCPU == "" {
+		return "not_available", nil
+	}
+	
+	energyPerfFile := filepath.Join(cpuPaths.AMDPstatePerCPU, "energy_performance_preference")
+	data, err := os.ReadFile(energyPerfFile)
+	if err != nil {
+		return "not_available", nil
+	}
+	
+	return strings.TrimSpace(string(data)), nil
+}
+
+// GetHighestPerf returns the AMD pstate highest performance value
+func GetHighestPerf() (int, error) {
+	if cpuPaths == nil || cpuPaths.AMDPstatePerCPU == "" {
+		return 0, nil
+	}
+	
+	highestPerfFile := filepath.Join(cpuPaths.AMDPstatePerCPU, "amd_pstate_highest_perf")
+	data, err := os.ReadFile(highestPerfFile)
+	if err != nil {
+		return 0, nil
+	}
+	
+	highestPerf, err := strconv.ParseInt(strings.TrimSpace(string(data)), 10, 64)
+	if err != nil {
+		return 0, nil
+	}
+	
+	return int(highestPerf), nil
+}
+
+// GetLowestNonlinearFreq returns the AMD pstate lowest non-linear frequency in GHz
+func GetLowestNonlinearFreq() (float64, error) {
+	if cpuPaths == nil || cpuPaths.AMDPstatePerCPU == "" {
+		return 0, nil
+	}
+	
+	lowestFreqFile := filepath.Join(cpuPaths.AMDPstatePerCPU, "amd_pstate_lowest_nonlinear_freq")
+	data, err := os.ReadFile(lowestFreqFile)
+	if err != nil {
+		return 0, nil
+	}
+	
+	lowestFreqKHz, err := strconv.ParseFloat(strings.TrimSpace(string(data)), 64)
+	if err != nil {
+		return 0, nil
+	}
+	
+	// Convert kHz to GHz
+	return lowestFreqKHz / 1000000, nil
+}
+
 // GetAllMetrics collects all CPU metrics and returns them in a single structure
 func GetAllMetrics() (*Metrics, error) {
 	usage, err := GetUsage()
@@ -478,18 +569,48 @@ func GetAllMetrics() (*Metrics, error) {
 		power = 0 // Don't fail on power error, just set to 0
 	}
 	
+	pstateStatus, err := GetPstateStatus()
+	if err != nil {
+		pstateStatus = "not_available" // Don't fail on pstate error, just set to not_available
+	}
+	
+	pstatePrefcore, err := GetPstatePrefcore()
+	if err != nil {
+		pstatePrefcore = "not_available" // Don't fail on prefcore error, just set to not_available
+	}
+	
+	energyPerfPreference, err := GetEnergyPerfPreference()
+	if err != nil {
+		energyPerfPreference = "not_available" // Don't fail on energy perf error, just set to not_available
+	}
+	
+	highestPerf, err := GetHighestPerf()
+	if err != nil {
+		highestPerf = 0 // Don't fail on highest perf error, just set to 0
+	}
+	
+	lowestNonlinearFreq, err := GetLowestNonlinearFreq()
+	if err != nil {
+		lowestNonlinearFreq = 0 // Don't fail on lowest freq error, just set to 0
+	}
+	
 	return &Metrics{
-		Usage:        usage,
-		Temperature:  temp,
-		Frequency:    freq,
-		Cores:        cores,
-		MemoryUsage:  memUsage,
-		LoadAvg:      loadAvg,
-		Governor:     governor,
-		BoostEnabled: boostEnabled,
-		MinFreq:      minFreq,
-		MaxFreq:      maxFreq,
-		IOWait:       ioWait,
-		Power:        power,
+		Usage:                 usage,
+		Temperature:           temp,
+		Frequency:             freq,
+		Cores:                 cores,
+		MemoryUsage:           memUsage,
+		LoadAvg:               loadAvg,
+		Governor:              governor,
+		BoostEnabled:          boostEnabled,
+		MinFreq:               minFreq,
+		MaxFreq:               maxFreq,
+		IOWait:                ioWait,
+		Power:                 power,
+		PstateStatus:          pstateStatus,
+		PstatePrefcore:        pstatePrefcore,
+		EnergyPerfPreference:  energyPerfPreference,
+		HighestPerf:           highestPerf,
+		LowestNonlinearFreq:   lowestNonlinearFreq,
 	}, nil
 }

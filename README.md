@@ -29,6 +29,9 @@ waybar-amd-module cpu minfreq    # Minimum CPU frequency
 waybar-amd-module cpu maxfreq    # Maximum CPU frequency
 waybar-amd-module cpu iowait     # I/O wait percentage
 waybar-amd-module cpu power      # System power consumption (charging/discharging)
+waybar-amd-module cpu pstate-status # AMD pstate driver status
+waybar-amd-module cpu energy-perf   # Energy performance preference
+waybar-amd-module cpu pstate        # All AMD pstate information
 ```
 
 ### GPU Commands
@@ -62,54 +65,8 @@ waybar-amd-module scan
 - `--format json|text` - Output format (default: json)
 - `--nerd-font` - Use nerd font symbols for enhanced display
 - `--no-tooltip` - Remove tooltip field from JSON output (only works with `--format=json`)
+- `--with-pstate` - Include AMD pstate information in CPU metrics tooltips
 
-## Example Output
-
-### CPU All Metrics (JSON)
-```json
-{"text":"15.6% 42°C 1.6GHz 12 cores 45.2% memory 0.82 load performance true boost 0.4-4.2GHz 2.1% iowait +67.3W system","tooltip":"Usage: 15.6%\nTemp: 42°C\nFreq: 1.6GHz\nCores: 12\nMemory: 45.2%\nLoad: 0.82\nGovernor: performance\nBoost: true\nMin/Max Freq: 0.4-4.2GHz\nIO Wait: 2.1%\nSystem Power: +67.3W charging","class":"custom-cpu"}
-```
-
-### CPU Individual Metric (JSON)
-```json
-{"text":"16.7%","tooltip":"Usage: 16.7%\nTemp: 42°C\nFreq: 1.9GHz\nCores: 12\nMemory: 45.2%\nLoad: 0.82\nGovernor: performance\nBoost: true\nMin/Max Freq: 0.4-4.2GHz\nIO Wait: 2.1%\nSystem Power: +67.3W charging","class":"custom-cpu"}
-```
-
-### CPU Power Consumption (JSON)
-```json
-{"text":"+67.3W charging","tooltip":"Usage: 13.3%\nTemp: 48°C\nFreq: 1.7GHz\nCores: 12\nMemory: 41.8%\nLoad: 0.58\nGovernor: powersave\nBoost: false\nMin/Max Freq: 0.4-3.3GHz\nIO Wait: 0.0%\nSystem Power: +67.3W charging","class":"custom-cpu"}
-```
-
-### GPU All Metrics (JSON)
-```json
-{"text":"5.2W 41°C 0.4GHz 0% util 46.9% memory 0 RPM 0.91V 0°C junction 0°C memtemp 0.0W cap","tooltip":"Power: 5.2W\nTemp: 41°C\nFreq: 0.4GHz\nUtil: 0%\nMemory: 46.9%\nFan: 0 RPM\nVoltage: 0.91V\nJunction: 0°C\nMemory Temp: 0°C\nPower Cap: 0.0W","class":"custom-gpu"}
-```
-
-### GPU Individual Metric (JSON)
-```json
-{"text":"5.1W","tooltip":"Power: 5.1W\nTemp: 41°C\nFreq: 0.4GHz\nUtil: 0%\nMemory: 46.9%\nFan: 0 RPM\nVoltage: 0.91V\nJunction: 0°C\nMemory Temp: 0°C\nPower Cap: 0.0W","class":"custom-gpu"}
-```
-
-### JSON Output without Tooltip (`--no-tooltip`)
-```json
-{"class":"custom-cpu","text":"15.6% 42°C 1.6GHz 12 cores 45.2% memory 0.82 load performance true boost 0.4-4.2GHz 2.1% iowait +67.3W system"}
-```
-
-```json
-{"class":"custom-gpu","text":"5.2W 41°C 0.4GHz 0% util 46.9% memory 0 RPM 0.91V 0°C junction 0°C memtemp 0.0W cap"}
-```
-
-### Text Format Examples
-```bash
-# CPU usage
-15.1%
-
-# CPU all metrics
-14.0% 47°C 1.6GHz 12 cores 41.7% memory 0.55 load powersave false boost 0.4-3.3GHz 0.0% iowait 65.7W system
-
-# System power consumption
-+67.3W charging
-```
 
 ## Waybar Configuration
 
@@ -139,6 +96,16 @@ waybar-amd-module scan
     "exec": "waybar-amd-module cpu usage --no-tooltip",
     "return-type": "json",
     "interval": 2
+  },
+  "custom/cpu-pstate": {
+    "exec": "waybar-amd-module cpu pstate-status --nerd-font",
+    "return-type": "json",
+    "interval": 5
+  },
+  "custom/cpu-energy-perf": {
+    "exec": "waybar-amd-module cpu energy-perf --nerd-font",
+    "return-type": "json",
+    "interval": 10
   }
 }
 ```
@@ -179,6 +146,7 @@ cat ~/.cache/waybar-amd-module/paths.json
 - Detects AMD CPUs via `/proc/cpuinfo` (AuthenticAMD)
 - Finds k10temp sensor in `/sys/class/hwmon/`
 - Locates cpufreq paths and boost controls
+- Discovers AMD pstate driver paths (`/sys/devices/system/cpu/amd_pstate/`)
 
 **Power Discovery:**
 - Battery: `/sys/class/power_supply/BAT*/`

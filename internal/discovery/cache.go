@@ -14,14 +14,13 @@ func Initialize() (*PathCache, error) {
 		return nil, errors.New("failed to initialize path cache: " + err.Error())
 	}
 
-	log.Printf("Path cache initialized successfully")
 	return cache, nil
 }
 
 // ForceRescan forces a complete rescan of hardware paths
 func (c *PathCache) ForceRescan() error {
 	log.Printf("Performing forced hardware rescan...")
-	
+
 	if err := c.Scan(); err != nil {
 		return errors.New("failed to rescan hardware: " + err.Error())
 	}
