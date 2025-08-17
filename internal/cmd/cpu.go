@@ -39,11 +39,11 @@ func formatCPUWithSymbols(metrics *cpu.Metrics) (string, string) {
 			func() string {
 				if metrics.Power > 0 {
 					return fmt.Sprintf("%s System Power: +%.1fW charging", nerdfonts.CPUPower, metrics.Power)
-				} else if metrics.Power < 0 {
-					return fmt.Sprintf("%s System Power: %.1fW discharging", nerdfonts.CPUPower, -metrics.Power)
-				} else {
-					return fmt.Sprintf("%s System Power: %.1fW", nerdfonts.CPUPower, metrics.Power)
 				}
+				if metrics.Power < 0 {
+					return fmt.Sprintf("%s System Power: %.1fW discharging", nerdfonts.CPUPower, -metrics.Power)
+				}
+				return fmt.Sprintf("%s System Power: %.1fW", nerdfonts.CPUPower, metrics.Power)
 			}(),
 		}
 		return text, strings.Join(tooltipLines, "\n")
@@ -64,11 +64,11 @@ func formatCPUWithSymbols(metrics *cpu.Metrics) (string, string) {
 		func() string {
 			if metrics.Power > 0 {
 				return fmt.Sprintf("System Power: +%.1fW charging", metrics.Power)
-			} else if metrics.Power < 0 {
-				return fmt.Sprintf("System Power: %.1fW discharging", -metrics.Power)
-			} else {
-				return fmt.Sprintf("System Power: %.1fW", metrics.Power)
 			}
+			if metrics.Power < 0 {
+				return fmt.Sprintf("System Power: %.1fW discharging", -metrics.Power)
+			}
+			return fmt.Sprintf("System Power: %.1fW", metrics.Power)
 		}(),
 	}
 	return text, strings.Join(tooltipLines, "\n")
@@ -155,6 +155,7 @@ func formatCPUBoost(boost bool) string {
 	return status
 }
 
+//nolint:unused // utility function for future frequency range formatting
 func formatCPUMinMaxFreq(minFreq, maxFreq float64) string {
 	if nerdFontFlag {
 		return fmt.Sprintf("%s %.1f-%.1fGHz", nerdfonts.CPUMinMax, minFreq, maxFreq)

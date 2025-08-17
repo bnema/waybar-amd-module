@@ -398,9 +398,8 @@ func GetPower() (float64, error) {
 									// Return positive for charging, negative for discharging
 									if status == "Charging" {
 										return powerWatts, nil
-									} else {
-										return -powerWatts, nil
 									}
+									return -powerWatts, nil
 								}
 							}
 						}

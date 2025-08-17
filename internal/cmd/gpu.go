@@ -135,11 +135,11 @@ func formatMemoryTemp(temp int) string {
 	return fmt.Sprintf("%d°C (memory)", temp)
 }
 
-func formatPowerCap(cap float64) string {
+func formatPowerCap(powerCap float64) string {
 	if nerdFontFlag {
-		return fmt.Sprintf("%s %.1fW", nerdfonts.GPUPower, cap)
+		return fmt.Sprintf("%s %.1fW", nerdfonts.GPUPower, powerCap)
 	}
-	return fmt.Sprintf("%.1fW (cap)", cap)
+	return fmt.Sprintf("%.1fW (cap)", powerCap)
 }
 
 var gpuCmd = &cobra.Command{
