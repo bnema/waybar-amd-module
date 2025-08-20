@@ -26,12 +26,6 @@ updates:
       prefix: "deps"
       prefix-development: "deps-dev"
       include: "scope"
-    # Enable security updates with higher priority
-    security-updates:
-      enabled: true
-    # Automatically merge security patches if tests pass
-    auto-merge:
-      enabled: false  # Set to true if you have comprehensive CI/CD
     # Reviewer configuration - uncomment and customize if needed
     # reviewers:
     #   - "bnema"
@@ -39,10 +33,7 @@ updates:
     #   - "bnema"
     # Target branch for PRs (defaults to repository default branch)
     target-branch: "main"
-    # Version update strategy
-    versioning-strategy: "increase"
     # Ignore specific dependencies that shouldn't be auto-updated
-    ignore:
-      # Uncomment to ignore specific dependencies
-      # - dependency-name: "github.com/spf13/cobra"
-      #   versions: [">=2.0.0"]  # Example: ignore major version updates
+    # ignore:
+    #   - dependency-name: "github.com/spf13/cobra"
+    #     versions: [">=2.0.0"]  # Example: ignore major version updates
