@@ -124,8 +124,16 @@ func (c *PathCache) scanPCIDrivers() (*GPUPaths, error) {
 
 // validateGPUPaths checks if essential GPU metric files exist
 func (c *PathCache) validateGPUPaths(gpu *GPUPaths) bool {
+	// Check power1_input
+	if _, err := os.Stat(filepath.Join(gpu.HwMon, "power1_input")); err != nil {
+		// Fall back to power1_average if power1_input is not available
+		if _, err := os.Stat(filepath.Join(gpu.HwMon, "power1_average")); err != nil {
+			return false
+		}
+	}
+
+	// Check other essential files
 	essentialFiles := []string{
-		"power1_input",
 		"temp1_input",
 		"freq1_input",
 	}
@@ -248,7 +256,7 @@ func (c *PathCache) findBoostPath() string {
 func (c *PathCache) findAMDPstatePaths() (string, string) {
 	amdPstateBase := "/sys/devices/system/cpu/amd_pstate"
 	amdPstatePerCPU := "/sys/devices/system/cpu/cpu0/cpufreq"
-	
+
 	// Check if AMD pstate directory exists and has status file
 	if _, err := os.Stat(filepath.Join(amdPstateBase, "status")); err == nil {
 		// Verify per-CPU pstate files exist
@@ -256,7 +264,7 @@ func (c *PathCache) findAMDPstatePaths() (string, string) {
 			return amdPstateBase, amdPstatePerCPU
 		}
 	}
-	
+
 	return "", ""
 }
 

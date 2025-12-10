@@ -13,18 +13,17 @@ import (
 
 // Metrics contains comprehensive GPU monitoring data
 type Metrics struct {
-	Power       float64 `json:"power"`
-	Temperature int     `json:"temperature"`
-	Frequency   float64 `json:"frequency"`
-	Utilization int     `json:"utilization"`
-	MemoryUsage float64 `json:"memory_usage"`
-	FanSpeed    int     `json:"fan_speed"`
-	Voltage     float64 `json:"voltage"`
-	JunctionTemp int    `json:"junction_temp"`
-	MemoryTemp   int    `json:"memory_temp"`
+	Power        float64 `json:"power"`
+	Temperature  int     `json:"temperature"`
+	Frequency    float64 `json:"frequency"`
+	Utilization  int     `json:"utilization"`
+	MemoryUsage  float64 `json:"memory_usage"`
+	FanSpeed     int     `json:"fan_speed"`
+	Voltage      float64 `json:"voltage"`
+	JunctionTemp int     `json:"junction_temp"`
+	MemoryTemp   int     `json:"memory_temp"`
 	PowerCap     float64 `json:"power_cap"`
 }
-
 
 var gpuPaths *discovery.GPUPaths
 
@@ -37,12 +36,11 @@ func Initialize(cache *discovery.PathCache) error {
 	return nil
 }
 
-
 func readMetricFile(filename string) (string, error) {
 	if gpuPaths == nil || gpuPaths.HwMon == "" {
 		return "", errors.New("GPU hwmon path not available")
 	}
-	
+
 	path := filepath.Clean(filepath.Join(gpuPaths.HwMon, filename))
 	// Validate that the path is within expected system directory and doesn't contain path traversal
 	if !strings.HasPrefix(path, "/sys/") || strings.Contains(path, "..") {
@@ -59,7 +57,7 @@ func readDeviceFile(filename string) (string, error) {
 	if gpuPaths == nil || gpuPaths.Device == "" {
 		return "", errors.New("GPU device path not available")
 	}
-	
+
 	path := filepath.Clean(filepath.Join(gpuPaths.Device, filename))
 	// Validate that the path is within expected system directory and doesn't contain path traversal
 	if !strings.HasPrefix(path, "/sys/") || strings.Contains(path, "..") {
@@ -74,16 +72,21 @@ func readDeviceFile(filename string) (string, error) {
 
 // GetPower returns GPU power consumption in watts
 func GetPower() (float64, error) {
+	// Try power1_input first
 	powerStr, err := readMetricFile("power1_input")
 	if err != nil {
-		return 0, err
+		// Fall back to power1_average if power1_input is not available
+		powerStr, err = readMetricFile("power1_average")
+		if err != nil {
+			return 0, err
+		}
 	}
-	
+
 	powerMicrowatts, err := strconv.ParseInt(powerStr, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return float64(powerMicrowatts) / 1000000.0, nil
 }
 
@@ -93,12 +96,12 @@ func GetTemperature() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	tempMillidegrees, err := strconv.ParseInt(tempStr, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return int(tempMillidegrees / 1000), nil
 }
 
@@ -108,12 +111,12 @@ func GetFrequency() (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	freqHz, err := strconv.ParseInt(freqStr, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return float64(freqHz) / 1000000000.0, nil
 }
 
@@ -123,12 +126,12 @@ func GetUtilization() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	utilization, err := strconv.ParseInt(utilStr, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return int(utilization), nil
 }
 
@@ -138,26 +141,26 @@ func GetMemoryUsage() (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	totalStr, err := readDeviceFile("mem_info_vram_total")
 	if err != nil {
 		return 0, err
 	}
-	
+
 	used, err := strconv.ParseInt(usedStr, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	total, err := strconv.ParseInt(totalStr, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	if total == 0 {
 		return 0, errors.New("total VRAM is 0")
 	}
-	
+
 	return float64(used) / float64(total) * 100, nil
 }
 
@@ -167,12 +170,12 @@ func GetFanSpeed() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	fanRPM, err := strconv.ParseInt(fanStr, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return int(fanRPM), nil
 }
 
@@ -182,12 +185,12 @@ func GetVoltage() (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	voltageMillivolts, err := strconv.ParseInt(voltageStr, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return float64(voltageMillivolts) / 1000.0, nil
 }
 
@@ -199,12 +202,12 @@ func GetJunctionTemp() (int, error) {
 		// Fall back to main temperature sensor if junction temp not available
 		return GetTemperature()
 	}
-	
+
 	tempMillidegrees, err := strconv.ParseInt(tempStr, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return int(tempMillidegrees / 1000), nil
 }
 
@@ -216,12 +219,12 @@ func GetMemoryTemp() (int, error) {
 		// Fall back to main temperature sensor if memory temp not available
 		return GetTemperature()
 	}
-	
+
 	tempMillidegrees, err := strconv.ParseInt(tempStr, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return int(tempMillidegrees / 1000), nil
 }
 
@@ -231,12 +234,12 @@ func GetPowerCap() (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	capMicrowatts, err := strconv.ParseInt(capStr, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return float64(capMicrowatts) / 1000000.0, nil
 }
 
@@ -246,52 +249,52 @@ func GetAllMetrics() (*Metrics, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	temp, err := GetTemperature()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	freq, err := GetFrequency()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	util, err := GetUtilization()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	memUsage, err := GetMemoryUsage()
 	if err != nil {
 		memUsage = 0 // Don't fail on memory error, just set to 0
 	}
-	
+
 	fanSpeed, err := GetFanSpeed()
 	if err != nil {
 		fanSpeed = 0 // Don't fail on fan speed error, just set to 0
 	}
-	
+
 	voltage, err := GetVoltage()
 	if err != nil {
 		voltage = 0 // Don't fail on voltage error, just set to 0
 	}
-	
+
 	junctionTemp, err := GetJunctionTemp()
 	if err != nil {
 		junctionTemp = 0 // Don't fail on junction temp error, just set to 0
 	}
-	
+
 	memoryTemp, err := GetMemoryTemp()
 	if err != nil {
 		memoryTemp = 0 // Don't fail on memory temp error, just set to 0
 	}
-	
+
 	powerCap, err := GetPowerCap()
 	if err != nil {
 		powerCap = 0 // Don't fail on power cap error, just set to 0
 	}
-	
+
 	return &Metrics{
 		Power:        power,
 		Temperature:  temp,
@@ -305,3 +308,4 @@ func GetAllMetrics() (*Metrics, error) {
 		PowerCap:     powerCap,
 	}, nil
 }
+
